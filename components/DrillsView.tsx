@@ -281,7 +281,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   useEffect(() => {
     const timer = setTimeout(() => {
         setChartVisible(true);
-    }, 100);
+    }, 200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -569,14 +569,14 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       </div>
 
       <div className="bg-surface rounded-3xl p-6 border border-white/5 shadow-lg">
-         <div className="h-32 flex items-end justify-between gap-2">
+         <div className="h-40 flex items-end justify-between gap-2">
             {WEEKLY_STATS.map((stat, index) => {
                const height = chartVisible ? Math.max(10, stat.score) : 0; // Use minimum height for interaction
                const isSelected = selectedDayIndex === index;
                
                return (
-                  <div 
-                    key={index} 
+                  <div
+                    key={stat.fullDay}
                     className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
                     onClick={() => setSelectedDayIndex(index)}
                   >
@@ -610,7 +610,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   );
 
   const renderWorkoutList = () => (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-36">
       <div className="mt-2 px-1">
          <h3 className="text-2xl font-extrabold tracking-tight mb-2">Workouts</h3>
          <p className="text-muted text-sm font-medium">What do you want to work on today?</p>
@@ -700,12 +700,15 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
            </div>
       </section>
 
+      {/* Progress Chart Section - Moved here for better visibility */}
+      {renderProgressChart()}
+
       <section className="pb-8">
         <h3 className="text-lg font-bold mb-4 px-1">Categories</h3>
         <div className="grid grid-cols-2 gap-3">
             {['Shooting', 'Defense', 'Dribbling', 'Finishing'].map((cat) => (
-                <div 
-                  key={cat} 
+                <div
+                  key={cat}
                   onClick={() => {
                     setFilterCategory(cat);
                     setShowAllWorkouts(true);
@@ -718,9 +721,6 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
             ))}
         </div>
       </section>
-
-      {/* Progress Chart Section Added Here */}
-      {renderProgressChart()}
     </div>
   );
 
