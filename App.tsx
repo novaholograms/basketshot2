@@ -138,8 +138,8 @@ const App: React.FC = () => {
 
   const getTitle = () => {
     switch (timeRange) {
-        case 'week': return "This Week's";
-        case 'month': return "This Month's";
+        case 'week': return "Week's";
+        case 'month': return "Month's";
         default: return "Today's";
     }
   };
