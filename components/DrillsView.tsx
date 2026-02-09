@@ -569,7 +569,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       </div>
 
       <div className="bg-surface rounded-3xl p-6 border border-white/5 shadow-lg">
-         <div className="h-32 flex items-end justify-between gap-2 pb-8">
+         <div className="h-32 flex items-end justify-between gap-2">
             {WEEKLY_STATS.map((stat, index) => {
                const height = chartVisible ? Math.max(10, stat.score) : 0; // Use minimum height for interaction
                const isSelected = selectedDayIndex === index;
