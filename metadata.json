@@ -1,0 +1,7 @@
+{
+  "name": "BasketShot AI",
+  "description": "A basketball training dashboard tracking accuracy, goals, and providing shot analysis.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
