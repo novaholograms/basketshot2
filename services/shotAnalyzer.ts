@@ -28,6 +28,28 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
+function avgVisibility(lm: Landmark[], indices: number[]): number {
+  let sum = 0;
+  let n = 0;
+  for (const idx of indices) {
+    const v = lm[idx]?.visibility;
+    if (typeof v === "number") {
+      sum += v;
+      n++;
+    }
+  }
+  return n > 0 ? sum / n : 0;
+}
+
+function median(arr: number[]): number {
+  if (arr.length === 0) return NaN;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+}
+
 function deg(rad: number): number {
   return (rad * 180) / Math.PI;
 }
@@ -117,6 +139,8 @@ export async function analyzeVideo(
   videoUrl: string,
   onProgress?: (percent: number) => void
 ): Promise<AnalysisResult> {
+  console.log("[analyzeVideo] start", { videoUrl });
+
   const video = document.createElement("video");
   video.src = videoUrl;
   video.muted = true;
@@ -147,6 +171,10 @@ export async function analyzeVideo(
   let processedFrames = 0;
   const totalFrames = Math.floor(maxDuration / stepSec);
 
+  // Key landmarks for "valid frame" check
+  const KEY_IDX = [11, 12, 13, 14, 15, 16, 23, 24]; // shoulders, elbows, wrists, hips
+  const VIS_THR = 0.55; // stricter than 0.5
+
   for (let t = 0; t < maxDuration; t += stepSec) {
     video.currentTime = t;
     await new Promise<void>((r) => {
@@ -158,8 +186,13 @@ export async function analyzeVideo(
       processedFrames++;
 
       if (result.landmarks && result.landmarks.length > 0) {
-        const lm = result.landmarks[0];
-        validFrames.push({ lm, t });
+        const lm = result.landmarks[0] as Landmark[];
+        if (lm.length > 24) {
+          const keyVis = avgVisibility(lm, KEY_IDX);
+          if (keyVis >= VIS_THR) {
+            validFrames.push({ lm, t });
+          }
+        }
       }
 
       if (onProgress) {
@@ -169,6 +202,13 @@ export async function analyzeVideo(
       console.warn("Frame detection failed", err);
     }
   }
+
+  console.log("[analyzeVideo] frames", {
+    processedFrames,
+    totalFrames,
+    valid: validFrames.length,
+    poseRatio: processedFrames > 0 ? validFrames.length / processedFrames : 0,
+  });
 
   const poseRatio = validFrames.length / processedFrames;
   if (poseRatio < 0.3 || validFrames.length < 10) {
@@ -251,7 +291,85 @@ export async function analyzeVideo(
     };
   }
 
+  // ---------------------------
+  // ShotGate (2 of 3) — "looks like a shot"
+  // ---------------------------
+
+  // Gate 1: Elbow extension at release
+  const ELBOW_EXT_THR = 140; // degrees
   const relLm = validFrames[releaseIdx].lm;
+  const elbowAtRelease = deg(
+    angleABC(relLm[idx.shoulder], relLm[idx.elbow], relLm[idx.wrist])
+  );
+  const gateElbow =
+    Number.isFinite(elbowAtRelease) && elbowAtRelease >= ELBOW_EXT_THR;
+
+  // Gate 2: Wrist elevation vs baseline
+  const preCount = Math.min(20, releaseIdx);
+  const preYs: number[] = [];
+  for (let i = Math.max(0, releaseIdx - preCount); i < releaseIdx; i++) {
+    const y = validFrames[i].lm[idx.wrist]?.y;
+    if (Number.isFinite(y)) preYs.push(y);
+  }
+  const baselineY = median(preYs);
+  const releaseY = relLm[idx.wrist]?.y;
+  const wristLift =
+    Number.isFinite(baselineY) && Number.isFinite(releaseY)
+      ? baselineY - releaseY
+      : 0;
+  const LIFT_THR = 0.25; // 25% normalized height
+  const gateLift = wristLift >= LIFT_THR;
+
+  // Gate 3: Follow-through (wrist stays high after release)
+  const postWindow = 5;
+  let highCount = 0;
+  const followThr = 0.12; // tolerance: stays near release (doesn't drop much)
+  for (let j = 1; j <= postWindow; j++) {
+    const k = releaseIdx + j;
+    if (k >= validFrames.length) break;
+    const y = validFrames[k].lm[idx.wrist]?.y;
+    if (
+      Number.isFinite(y) &&
+      Number.isFinite(releaseY) &&
+      y <= releaseY + followThr
+    ) {
+      highCount++;
+    }
+  }
+  const gateFollow = highCount >= 3; // 3/5
+
+  const gatesPassed = [gateElbow, gateLift, gateFollow].filter(Boolean).length;
+  if (gatesPassed < 2) {
+    console.log("[ShotGate] FAILED", {
+      gateElbow,
+      gateLift,
+      gateFollow,
+      elbowAtRelease,
+      wristLift,
+      highCount,
+    });
+    return {
+      score: 0,
+      metrics: { torsoStability: 0, armAlignment: 0, wristFlick: 0 },
+      strengths: [],
+      improvements: [],
+      isInvalid: true,
+      messageIfInvalid:
+        "This doesn't look like a basketball shot. Please record a full shooting motion with arm extension and follow-through.",
+      processedFrames,
+      totalFrames,
+    };
+  }
+
+  console.log("[ShotGate] PASSED", {
+    gateElbow,
+    gateLift,
+    gateFollow,
+    elbowAtRelease,
+    wristLift,
+    highCount,
+  });
+
   const shoulder = relLm[idx.shoulder];
   const elbow = relLm[idx.elbow];
   const wrist = relLm[idx.wrist];

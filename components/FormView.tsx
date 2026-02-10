@@ -148,13 +148,8 @@ export const FormView: React.FC = () => {
     if (viewState === 'analyzing') {
       const interval = setInterval(() => {
         setLoadingStepIndex((prev) => {
-          if (prev < LOADING_STEPS.length - 1) {
-            return prev + 1;
-          }
-          // End of loading steps, move to results
-          clearInterval(interval);
-          setTimeout(() => setViewState('results'), 800);
-          return prev;
+          if (prev < LOADING_STEPS.length - 1) return prev + 1;
+          return prev; // Stay on last message until analysis completes
         });
       }, 800); // Speed of text change
 
