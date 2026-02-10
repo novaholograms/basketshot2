@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
 import type { AnalysisResult } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
-import { drawSkeleton, setupCanvasWithDPR } from '../utils/skeletonDrawer';
-import type { Landmark as OverlayLandmark } from '../utils/skeletonDrawer';
 
 const SHOT_TYPES = [
   {
@@ -63,17 +61,12 @@ export const FormView: React.FC = () => {
 
   // Animation State
   const [displayScore, setDisplayScore] = useState(0);
-
+  
   // History Filter State
   const [historyFilter, setHistoryFilter] = useState<string>('all');
-
+  
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasCtxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const canvasSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
-  const viewStateRef = useRef<ViewState>('selection');
 
   // -- Handlers --
 
@@ -106,43 +99,10 @@ export const FormView: React.FC = () => {
 
     if (!videoUrl) return;
 
-    const videoEl = videoRef.current;
-    const canvasEl = canvasRef.current;
-    if (!videoEl || !canvasEl) {
-      console.error("[overlay] Missing video/canvas ref");
-      return;
-    }
-
-    if (videoEl.readyState < 2) {
-      await new Promise<void>((resolve) => {
-        const onMeta = () => {
-          videoEl.removeEventListener("loadedmetadata", onMeta);
-          resolve();
-        };
-        videoEl.addEventListener("loadedmetadata", onMeta);
-      });
-    }
-
-    const rect = canvasEl.getBoundingClientRect();
-    const displayW = Math.max(1, Math.round(rect.width));
-    const displayH = Math.max(1, Math.round(rect.height));
-    canvasSizeRef.current = { w: displayW, h: displayH };
-    canvasCtxRef.current = setupCanvasWithDPR(canvasEl, displayW, displayH);
-
     try {
-      const result = await analyzeVideo(
-        videoEl,
-        (percent) => {
-          // Optional: could update UI with progress
-        },
-        (landmarks) => {
-          if (viewStateRef.current !== 'analyzing') return;
-          const ctx = canvasCtxRef.current;
-          const { w, h } = canvasSizeRef.current;
-          if (!ctx || !w || !h) return;
-          drawSkeleton(ctx, landmarks, w, h);
-        }
-      );
+      const result = await analyzeVideo(videoUrl, (percent) => {
+        // Optional: could update UI with progress
+      });
 
       setAnalysisResult(result);
 
@@ -162,10 +122,6 @@ export const FormView: React.FC = () => {
         totalFrames: 0
       });
       setViewState('results');
-    } finally {
-      const ctx = canvasCtxRef.current;
-      const { w, h } = canvasSizeRef.current;
-      if (ctx && w && h) ctx.clearRect(0, 0, w, h);
     }
   };
 
@@ -186,11 +142,6 @@ export const FormView: React.FC = () => {
   };
 
   // -- Effects --
-
-  // Sync viewStateRef
-  useEffect(() => {
-    viewStateRef.current = viewState;
-  }, [viewState]);
 
   // Cycle through loading text
   useEffect(() => {
@@ -232,7 +183,6 @@ export const FormView: React.FC = () => {
         return () => clearInterval(timer);
     }
   }, [viewState, analysisResult]);
-
 
   // -- Filtered History Logic --
   const filteredHistory = historyFilter === 'all' 
@@ -456,23 +406,18 @@ export const FormView: React.FC = () => {
     <div className="h-full flex flex-col justify-center animate-in fade-in duration-700 relative pb-20">
         <div className="relative w-full aspect-[9/16] max-h-[70vh] rounded-3xl overflow-hidden border border-primary/30 shadow-[0_0_30px_rgba(249,128,6,0.1)]">
             {videoUrl && (
-                <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    className="w-full h-full object-contain opacity-60"
-                    muted
-                    playsInline
+                <video 
+                    src={videoUrl} 
+                    className="w-full h-full object-cover opacity-60" 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
                 />
             )}
-
-            {/* Skeleton Canvas Overlay */}
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 w-full h-full pointer-events-none z-10"
-            />
-
+            
             {/* Scanning Overlay */}
-            <div className="absolute inset-0 bg-primary/5 z-15"></div>
+            <div className="absolute inset-0 bg-primary/5 z-10"></div>
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center">
                 <div className="w-full absolute top-0 h-1 bg-primary/50 shadow-[0_0_15px_#f98006] animate-[scan_2s_ease-in-out_infinite]"></div>
             </div>

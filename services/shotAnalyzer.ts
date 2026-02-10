@@ -1,6 +1,5 @@
 import type { AnalysisResult, PoseMetrics } from "../types";
 import { detectPoseForVideo, resetPoseLandmarker } from "./poseLandmarker";
-import type { Landmark as OverlayLandmark } from "../utils/skeletonDrawer";
 
 interface Landmark {
   x: number;
@@ -137,21 +136,23 @@ function buildImprovements(m: PoseMetrics): string[] {
 }
 
 export async function analyzeVideo(
-  videoEl: HTMLVideoElement,
-  onProgress?: (percent: number) => void,
-  onFrameDrawn?: (landmarks: OverlayLandmark[]) => void
+  videoUrl: string,
+  onProgress?: (percent: number) => void
 ): Promise<AnalysisResult> {
   await resetPoseLandmarker();
-  console.log("[analyzeVideo] start", { videoReadyState: videoEl.readyState });
+  console.log("[analyzeVideo] start", { videoUrl });
 
-  try {
-    await videoEl.play();
-    videoEl.pause();
-  } catch {
-    // ignore
-  }
+  const video = document.createElement("video");
+  video.src = videoUrl;
+  video.muted = true;
+  video.playsInline = true;
 
-  const duration = videoEl.duration;
+  await new Promise<void>((resolve, reject) => {
+    video.onloadedmetadata = () => resolve();
+    video.onerror = () => reject(new Error("Failed to load video"));
+  });
+
+  const duration = video.duration;
   if (duration < 1) {
     return {
       score: 0,
@@ -176,20 +177,20 @@ export async function analyzeVideo(
   const VIS_THR = 0.55; // stricter than 0.5
 
   for (let t = 0; t < maxDuration; t += stepSec) {
-    videoEl.currentTime = t;
+    video.currentTime = t;
     await new Promise<void>((r) => {
-      videoEl.onseeked = () => r();
+      video.onseeked = () => r();
     });
 
     let result: any = null;
     try {
-      result = await detectPoseForVideo(videoEl, Math.round(t * 1000));
+      result = await detectPoseForVideo(video, Math.round(t * 1000));
       processedFrames++;
     } catch (err) {
       console.error("[analyzeVideo] frame detection failed", err);
       try {
         await resetPoseLandmarker();
-        result = await detectPoseForVideo(videoEl, Math.round(t * 1000));
+        result = await detectPoseForVideo(video, Math.round(t * 1000));
         processedFrames++;
       } catch (err2) {
         console.error("[analyzeVideo] frame retry failed", err2);
@@ -210,8 +211,6 @@ export async function analyzeVideo(
     if (result && result.landmarks && result.landmarks.length > 0) {
       const lm = result.landmarks[0] as Landmark[];
       if (lm.length > 24) {
-        if (onFrameDrawn) onFrameDrawn(lm as unknown as OverlayLandmark[]);
-
         const keyVis = avgVisibility(lm, KEY_IDX);
         if (keyVis >= VIS_THR) {
           validFrames.push({ lm, t });
