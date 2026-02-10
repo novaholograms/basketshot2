@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
 import type { AnalysisResult } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
+import { drawSkeleton } from '../utils/skeletonDrawer';
+import type { Landmark as OverlayLandmark } from '../utils/skeletonDrawer';
 
 const SHOT_TYPES = [
   {
@@ -61,12 +63,17 @@ export const FormView: React.FC = () => {
 
   // Animation State
   const [displayScore, setDisplayScore] = useState(0);
-  
+
   // History Filter State
   const [historyFilter, setHistoryFilter] = useState<string>('all');
-  
+
+  // Skeleton Overlay State
+  const [currentLandmarks, setCurrentLandmarks] = useState<null | { landmarks: OverlayLandmark[]; videoWidth: number; videoHeight: number }>(null);
+
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewStateRef = useRef<ViewState>('selection');
 
   // -- Handlers --
 
@@ -96,13 +103,26 @@ export const FormView: React.FC = () => {
     setViewState('analyzing');
     setLoadingStepIndex(0);
     setDisplayScore(0);
+    setCurrentLandmarks(null);
 
     if (!videoUrl) return;
 
     try {
-      const result = await analyzeVideo(videoUrl, (percent) => {
-        // Optional: could update UI with progress
-      });
+      const result = await analyzeVideo(
+        videoUrl,
+        (percent) => {
+          // Optional: could update UI with progress
+        },
+        (frame) => {
+          // Evitar updates si ya no estamos analizando
+          if (viewStateRef.current !== 'analyzing') return;
+          setCurrentLandmarks({
+            landmarks: frame.landmarks,
+            videoWidth: frame.videoWidth,
+            videoHeight: frame.videoHeight,
+          });
+        }
+      );
 
       setAnalysisResult(result);
 
@@ -122,6 +142,8 @@ export const FormView: React.FC = () => {
         totalFrames: 0
       });
       setViewState('results');
+    } finally {
+      setCurrentLandmarks(null);
     }
   };
 
@@ -142,6 +164,11 @@ export const FormView: React.FC = () => {
   };
 
   // -- Effects --
+
+  // Sync viewStateRef
+  useEffect(() => {
+    viewStateRef.current = viewState;
+  }, [viewState]);
 
   // Cycle through loading text
   useEffect(() => {
@@ -183,6 +210,37 @@ export const FormView: React.FC = () => {
         return () => clearInterval(timer);
     }
   }, [viewState, analysisResult]);
+
+  // Draw skeleton overlay
+  useEffect(() => {
+    if (viewStateRef.current !== 'analyzing') return;
+    if (!currentLandmarks || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = currentLandmarks.videoWidth || 0;
+    const h = currentLandmarks.videoHeight || 0;
+    if (!w || !h) return;
+
+    // Tamaño real del buffer de canvas (no CSS)
+    if (canvas.width !== w) canvas.width = w;
+    if (canvas.height !== h) canvas.height = h;
+
+    // Dibujo
+    drawSkeleton(ctx, currentLandmarks.landmarks, canvas.width, canvas.height);
+  }, [currentLandmarks]);
+
+  // Cleanup skeleton overlay when leaving analyzing
+  useEffect(() => {
+    if (viewState === 'analyzing') return;
+    setCurrentLandmarks(null);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, [viewState]);
 
   // -- Filtered History Logic --
   const filteredHistory = historyFilter === 'all' 
@@ -406,18 +464,24 @@ export const FormView: React.FC = () => {
     <div className="h-full flex flex-col justify-center animate-in fade-in duration-700 relative pb-20">
         <div className="relative w-full aspect-[9/16] max-h-[70vh] rounded-3xl overflow-hidden border border-primary/30 shadow-[0_0_30px_rgba(249,128,6,0.1)]">
             {videoUrl && (
-                <video 
-                    src={videoUrl} 
-                    className="w-full h-full object-cover opacity-60" 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline 
+                <video
+                    src={videoUrl}
+                    className="w-full h-full object-cover opacity-60"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
                 />
             )}
-            
+
+            {/* Skeleton Canvas Overlay */}
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full pointer-events-none z-10"
+            />
+
             {/* Scanning Overlay */}
-            <div className="absolute inset-0 bg-primary/5 z-10"></div>
+            <div className="absolute inset-0 bg-primary/5 z-15"></div>
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center">
                 <div className="w-full absolute top-0 h-1 bg-primary/50 shadow-[0_0_15px_#f98006] animate-[scan_2s_ease-in-out_infinite]"></div>
             </div>

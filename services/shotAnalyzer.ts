@@ -1,5 +1,6 @@
 import type { AnalysisResult, PoseMetrics } from "../types";
 import { detectPoseForVideo, resetPoseLandmarker } from "./poseLandmarker";
+import type { Landmark as OverlayLandmark } from "../utils/skeletonDrawer";
 
 interface Landmark {
   x: number;
@@ -137,7 +138,8 @@ function buildImprovements(m: PoseMetrics): string[] {
 
 export async function analyzeVideo(
   videoUrl: string,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
+  onFrame?: (data: { landmarks: OverlayLandmark[]; timestampSec: number; videoWidth: number; videoHeight: number }) => void
 ): Promise<AnalysisResult> {
   await resetPoseLandmarker();
   console.log("[analyzeVideo] start", { videoUrl });
@@ -211,6 +213,16 @@ export async function analyzeVideo(
     if (result && result.landmarks && result.landmarks.length > 0) {
       const lm = result.landmarks[0] as Landmark[];
       if (lm.length > 24) {
+        // Emit frame para overlay
+        if (onFrame) {
+          onFrame({
+            landmarks: lm as unknown as OverlayLandmark[],
+            timestampSec: t,
+            videoWidth: video.videoWidth || 0,
+            videoHeight: video.videoHeight || 0,
+          });
+        }
+
         const keyVis = avgVisibility(lm, KEY_IDX);
         if (keyVis >= VIS_THR) {
           validFrames.push({ lm, t });
