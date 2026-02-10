@@ -137,24 +137,21 @@ function buildImprovements(m: PoseMetrics): string[] {
 }
 
 export async function analyzeVideo(
-  videoUrl: string,
+  videoEl: HTMLVideoElement,
   onProgress?: (percent: number) => void,
-  onFrame?: (data: { landmarks: OverlayLandmark[]; timestampSec: number; videoWidth: number; videoHeight: number }) => void
+  onFrameDrawn?: (landmarks: OverlayLandmark[]) => void
 ): Promise<AnalysisResult> {
   await resetPoseLandmarker();
-  console.log("[analyzeVideo] start", { videoUrl });
+  console.log("[analyzeVideo] start", { videoReadyState: videoEl.readyState });
 
-  const video = document.createElement("video");
-  video.src = videoUrl;
-  video.muted = true;
-  video.playsInline = true;
+  try {
+    await videoEl.play();
+    videoEl.pause();
+  } catch {
+    // ignore
+  }
 
-  await new Promise<void>((resolve, reject) => {
-    video.onloadedmetadata = () => resolve();
-    video.onerror = () => reject(new Error("Failed to load video"));
-  });
-
-  const duration = video.duration;
+  const duration = videoEl.duration;
   if (duration < 1) {
     return {
       score: 0,
@@ -179,20 +176,20 @@ export async function analyzeVideo(
   const VIS_THR = 0.55; // stricter than 0.5
 
   for (let t = 0; t < maxDuration; t += stepSec) {
-    video.currentTime = t;
+    videoEl.currentTime = t;
     await new Promise<void>((r) => {
-      video.onseeked = () => r();
+      videoEl.onseeked = () => r();
     });
 
     let result: any = null;
     try {
-      result = await detectPoseForVideo(video, Math.round(t * 1000));
+      result = await detectPoseForVideo(videoEl, Math.round(t * 1000));
       processedFrames++;
     } catch (err) {
       console.error("[analyzeVideo] frame detection failed", err);
       try {
         await resetPoseLandmarker();
-        result = await detectPoseForVideo(video, Math.round(t * 1000));
+        result = await detectPoseForVideo(videoEl, Math.round(t * 1000));
         processedFrames++;
       } catch (err2) {
         console.error("[analyzeVideo] frame retry failed", err2);
@@ -213,15 +210,7 @@ export async function analyzeVideo(
     if (result && result.landmarks && result.landmarks.length > 0) {
       const lm = result.landmarks[0] as Landmark[];
       if (lm.length > 24) {
-        // Emit frame para overlay
-        if (onFrame) {
-          onFrame({
-            landmarks: lm as unknown as OverlayLandmark[],
-            timestampSec: t,
-            videoWidth: video.videoWidth || 0,
-            videoHeight: video.videoHeight || 0,
-          });
-        }
+        if (onFrameDrawn) onFrameDrawn(lm as unknown as OverlayLandmark[]);
 
         const keyVis = avgVisibility(lm, KEY_IDX);
         if (keyVis >= VIS_THR) {

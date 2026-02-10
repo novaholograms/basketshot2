@@ -5,6 +5,29 @@ export type Landmark = {
   visibility?: number;
 };
 
+export function setupCanvasWithDPR(
+  canvas: HTMLCanvasElement,
+  displayWidth: number,
+  displayHeight: number
+): CanvasRenderingContext2D | null {
+  const dprRaw = window.devicePixelRatio || 1;
+  const dpr = Math.min(dprRaw, 2);
+
+  canvas.style.width = `${displayWidth}px`;
+  canvas.style.height = `${displayHeight}px`;
+
+  const nextW = Math.max(1, Math.floor(displayWidth * dpr));
+  const nextH = Math.max(1, Math.floor(displayHeight * dpr));
+  if (canvas.width !== nextW) canvas.width = nextW;
+  if (canvas.height !== nextH) canvas.height = nextH;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+
 // Conexiones básicas (MediaPipe Pose 33 landmarks)
 export const POSE_CONNECTIONS: Array<[number, number]> = [
   // Cara (mínimo)

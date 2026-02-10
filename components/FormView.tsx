@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
 import type { AnalysisResult } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
-import { drawSkeleton } from '../utils/skeletonDrawer';
+import { drawSkeleton, setupCanvasWithDPR } from '../utils/skeletonDrawer';
 import type { Landmark as OverlayLandmark } from '../utils/skeletonDrawer';
 
 const SHOT_TYPES = [
@@ -67,12 +67,12 @@ export const FormView: React.FC = () => {
   // History Filter State
   const [historyFilter, setHistoryFilter] = useState<string>('all');
 
-  // Skeleton Overlay State
-  const [currentLandmarks, setCurrentLandmarks] = useState<null | { landmarks: OverlayLandmark[]; videoWidth: number; videoHeight: number }>(null);
-
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const canvasSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
   const viewStateRef = useRef<ViewState>('selection');
 
   // -- Handlers --
@@ -103,24 +103,44 @@ export const FormView: React.FC = () => {
     setViewState('analyzing');
     setLoadingStepIndex(0);
     setDisplayScore(0);
-    setCurrentLandmarks(null);
 
     if (!videoUrl) return;
 
+    const videoEl = videoRef.current;
+    const canvasEl = canvasRef.current;
+    if (!videoEl || !canvasEl) {
+      console.error("[overlay] Missing video/canvas ref");
+      return;
+    }
+
+    if (videoEl.readyState < 2) {
+      await new Promise<void>((resolve) => {
+        const onMeta = () => {
+          videoEl.removeEventListener("loadedmetadata", onMeta);
+          resolve();
+        };
+        videoEl.addEventListener("loadedmetadata", onMeta);
+      });
+    }
+
+    const rect = canvasEl.getBoundingClientRect();
+    const displayW = Math.max(1, Math.round(rect.width));
+    const displayH = Math.max(1, Math.round(rect.height));
+    canvasSizeRef.current = { w: displayW, h: displayH };
+    canvasCtxRef.current = setupCanvasWithDPR(canvasEl, displayW, displayH);
+
     try {
       const result = await analyzeVideo(
-        videoUrl,
+        videoEl,
         (percent) => {
           // Optional: could update UI with progress
         },
-        (frame) => {
-          // Evitar updates si ya no estamos analizando
+        (landmarks) => {
           if (viewStateRef.current !== 'analyzing') return;
-          setCurrentLandmarks({
-            landmarks: frame.landmarks,
-            videoWidth: frame.videoWidth,
-            videoHeight: frame.videoHeight,
-          });
+          const ctx = canvasCtxRef.current;
+          const { w, h } = canvasSizeRef.current;
+          if (!ctx || !w || !h) return;
+          drawSkeleton(ctx, landmarks, w, h);
         }
       );
 
@@ -143,7 +163,9 @@ export const FormView: React.FC = () => {
       });
       setViewState('results');
     } finally {
-      setCurrentLandmarks(null);
+      const ctx = canvasCtxRef.current;
+      const { w, h } = canvasSizeRef.current;
+      if (ctx && w && h) ctx.clearRect(0, 0, w, h);
     }
   };
 
@@ -211,36 +233,6 @@ export const FormView: React.FC = () => {
     }
   }, [viewState, analysisResult]);
 
-  // Draw skeleton overlay
-  useEffect(() => {
-    if (viewStateRef.current !== 'analyzing') return;
-    if (!currentLandmarks || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = currentLandmarks.videoWidth || 0;
-    const h = currentLandmarks.videoHeight || 0;
-    if (!w || !h) return;
-
-    // Tamaño real del buffer de canvas (no CSS)
-    if (canvas.width !== w) canvas.width = w;
-    if (canvas.height !== h) canvas.height = h;
-
-    // Dibujo
-    drawSkeleton(ctx, currentLandmarks.landmarks, canvas.width, canvas.height);
-  }, [currentLandmarks]);
-
-  // Cleanup skeleton overlay when leaving analyzing
-  useEffect(() => {
-    if (viewState === 'analyzing') return;
-    setCurrentLandmarks(null);
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }, [viewState]);
 
   // -- Filtered History Logic --
   const filteredHistory = historyFilter === 'all' 
@@ -465,10 +457,9 @@ export const FormView: React.FC = () => {
         <div className="relative w-full aspect-[9/16] max-h-[70vh] rounded-3xl overflow-hidden border border-primary/30 shadow-[0_0_30px_rgba(249,128,6,0.1)]">
             {videoUrl && (
                 <video
+                    ref={videoRef}
                     src={videoUrl}
-                    className="w-full h-full object-cover opacity-60"
-                    autoPlay
-                    loop
+                    className="w-full h-full object-contain opacity-60"
                     muted
                     playsInline
                 />
