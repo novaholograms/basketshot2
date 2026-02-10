@@ -317,13 +317,13 @@ export async function analyzeVideo(
     Number.isFinite(baselineY) && Number.isFinite(releaseY)
       ? baselineY - releaseY
       : 0;
-  const LIFT_THR = 0.25; // 25% normalized height
+  const LIFT_THR = 0.18; // more tolerant: allows real shots like the one in logs (0.202)
   const gateLift = wristLift >= LIFT_THR;
 
   // Gate 3: Follow-through (wrist stays high after release)
-  const postWindow = 5;
+  const postWindow = 7;
   let highCount = 0;
-  const followThr = 0.12; // tolerance: stays near release (doesn't drop much)
+  const followThr = 0.22; // more tolerant: many real shots drop wrist quickly
   for (let j = 1; j <= postWindow; j++) {
     const k = releaseIdx + j;
     if (k >= validFrames.length) break;
@@ -336,7 +336,7 @@ export async function analyzeVideo(
       highCount++;
     }
   }
-  const gateFollow = highCount >= 3; // 3/5
+  const gateFollow = highCount >= 3; // 3/7
 
   const gatesPassed = [gateElbow, gateLift, gateFollow].filter(Boolean).length;
   if (gatesPassed < 2) {
