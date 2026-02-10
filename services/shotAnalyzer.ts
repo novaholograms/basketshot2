@@ -1,5 +1,5 @@
 import type { AnalysisResult, PoseMetrics } from "../types";
-import { detectPoseForVideo } from "./poseLandmarker";
+import { detectPoseForVideo, resetPoseLandmarker } from "./poseLandmarker";
 
 interface Landmark {
   x: number;
@@ -139,6 +139,7 @@ export async function analyzeVideo(
   videoUrl: string,
   onProgress?: (percent: number) => void
 ): Promise<AnalysisResult> {
+  await resetPoseLandmarker();
   console.log("[analyzeVideo] start", { videoUrl });
 
   const video = document.createElement("video");
@@ -181,25 +182,44 @@ export async function analyzeVideo(
       video.onseeked = () => r();
     });
 
+    let result: any = null;
     try {
-      const result = await detectPoseForVideo(video, Math.round(t * 1000));
+      result = await detectPoseForVideo(video, Math.round(t * 1000));
       processedFrames++;
+    } catch (err) {
+      console.error("[analyzeVideo] frame detection failed", err);
+      try {
+        await resetPoseLandmarker();
+        result = await detectPoseForVideo(video, Math.round(t * 1000));
+        processedFrames++;
+      } catch (err2) {
+        console.error("[analyzeVideo] frame retry failed", err2);
+        return {
+          score: 0,
+          metrics: { torsoStability: 0, armAlignment: 0, wristFlick: 0 },
+          strengths: [],
+          improvements: [],
+          isInvalid: true,
+          messageIfInvalid:
+            "Error interno del modelo al procesar el vídeo. Prueba con otro vídeo o vuelve a grabarlo.",
+          processedFrames,
+          totalFrames,
+        };
+      }
+    }
 
-      if (result.landmarks && result.landmarks.length > 0) {
-        const lm = result.landmarks[0] as Landmark[];
-        if (lm.length > 24) {
-          const keyVis = avgVisibility(lm, KEY_IDX);
-          if (keyVis >= VIS_THR) {
-            validFrames.push({ lm, t });
-          }
+    if (result && result.landmarks && result.landmarks.length > 0) {
+      const lm = result.landmarks[0] as Landmark[];
+      if (lm.length > 24) {
+        const keyVis = avgVisibility(lm, KEY_IDX);
+        if (keyVis >= VIS_THR) {
+          validFrames.push({ lm, t });
         }
       }
+    }
 
-      if (onProgress) {
-        onProgress(Math.round((processedFrames / totalFrames) * 100));
-      }
-    } catch (err) {
-      console.warn("Frame detection failed", err);
+    if (onProgress) {
+      onProgress(Math.round((processedFrames / totalFrames) * 100));
     }
   }
 
