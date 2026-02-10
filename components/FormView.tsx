@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
+import type { AnalysisResult } from '../types';
+import { analyzeVideo } from '../services/shotAnalyzer';
 
 const SHOT_TYPES = [
   {
@@ -55,7 +57,8 @@ export const FormView: React.FC = () => {
   const [showTips, setShowTips] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
-  
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+
   // Animation State
   const [displayScore, setDisplayScore] = useState(0);
   
@@ -89,10 +92,37 @@ export const FormView: React.FC = () => {
     }
   };
 
-  const startAnalysis = () => {
+  const startAnalysis = async () => {
     setViewState('analyzing');
     setLoadingStepIndex(0);
-    setDisplayScore(0); // Reset score for animation
+    setDisplayScore(0);
+
+    if (!videoUrl) return;
+
+    try {
+      const result = await analyzeVideo(videoUrl, (percent) => {
+        // Optional: could update UI with progress
+      });
+
+      setAnalysisResult(result);
+
+      setTimeout(() => {
+        setViewState('results');
+      }, 800);
+    } catch (error) {
+      console.error('Analysis error:', error);
+      setAnalysisResult({
+        score: 0,
+        metrics: { torsoStability: 0, armAlignment: 0, wristFlick: 0 },
+        strengths: [],
+        improvements: [],
+        isInvalid: true,
+        messageIfInvalid: 'An error occurred during analysis. Please try again.',
+        processedFrames: 0,
+        totalFrames: 0
+      });
+      setViewState('results');
+    }
   };
 
   const handleBack = () => {
@@ -107,6 +137,7 @@ export const FormView: React.FC = () => {
       setSelectedShot(null);
       setVideoUrl(null);
       setDisplayScore(0);
+      setAnalysisResult(null);
     }
   };
 
@@ -133,20 +164,19 @@ export const FormView: React.FC = () => {
 
   // Animate Score
   useEffect(() => {
-    if (viewState === 'results') {
-        const targetScore = 82;
-        const duration = 2500; // 2.5 seconds total duration
+    if (viewState === 'results' && analysisResult) {
+        const targetScore = analysisResult.score;
+        const duration = 2500;
         const steps = 60;
         const incrementTime = duration / steps;
-        
+
         let currentStep = 0;
 
         const timer = setInterval(() => {
             currentStep++;
             const progress = currentStep / steps;
-            // Ease out cubic function for smoother landing
-            const easeOut = 1 - Math.pow(1 - progress, 3); 
-            
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+
             const nextScore = Math.min(Math.round(easeOut * targetScore), targetScore);
             setDisplayScore(nextScore);
 
@@ -157,7 +187,7 @@ export const FormView: React.FC = () => {
 
         return () => clearInterval(timer);
     }
-  }, [viewState]);
+  }, [viewState, analysisResult]);
 
   // -- Filtered History Logic --
   const filteredHistory = historyFilter === 'all' 
@@ -416,121 +446,165 @@ export const FormView: React.FC = () => {
     </div>
   );
 
-  const renderResults = () => (
-    <div className="pb-24 animate-in slide-in-from-bottom-8 duration-700">
-        
+  const renderResults = () => {
+    if (analysisResult?.isInvalid) {
+      return (
+        <div className="pb-24 animate-in slide-in-from-bottom-8 duration-700">
+          <div className="flex flex-col items-center justify-center py-12 mt-6">
+            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
+              <AlertCircle size={48} className="text-red-500" />
+            </div>
+            <h2 className="text-2xl font-extrabold tracking-tight mb-3 text-center">Unable to Analyze</h2>
+            <p className="text-muted text-sm font-medium text-center max-w-[280px] leading-relaxed mb-8">
+              {analysisResult.messageIfInvalid}
+            </p>
+            <button
+              onClick={handleBack}
+              className="bg-primary text-black font-extrabold text-sm py-4 px-8 rounded-2xl hover:bg-primary/90 transition-all"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="pb-24 animate-in slide-in-from-bottom-8 duration-700">
         {/* Score Header */}
         <div className="flex flex-col items-center justify-center mb-8 mt-6">
-             <div className="relative w-40 h-40 mb-6">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
-                    {/* Background Circle */}
-                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/10" />
-                    {/* Progress Circle with Slow Animation */}
-                    <circle 
-                        cx="64" 
-                        cy="64" 
-                        r="56" 
-                        stroke="#f98006" 
-                        strokeWidth="8" 
-                        fill="transparent" 
-                        strokeDasharray={352} 
-                        strokeDashoffset={352 - (352 * displayScore) / 100} 
-                        className="transition-all duration-[2500ms] ease-out" 
-                        strokeLinecap="round" 
-                    />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-                    <span className="text-5xl font-black tracking-tighter text-white leading-none">
-                        {displayScore}
-                    </span>
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-1">Score</span>
-                </div>
-             </div>
-             <div className={`transition-opacity duration-1000 ${displayScore > 50 ? 'opacity-100' : 'opacity-0'}`}>
-                <h2 className="text-3xl font-extrabold tracking-tight mb-2 text-center">Great Shot!</h2>
-                <p className="text-muted text-sm font-medium text-center max-w-[200px] leading-relaxed mx-auto">Your form is looking solid.</p>
-             </div>
+          <div className="relative w-40 h-40 mb-6">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
+              <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/10" />
+              <circle
+                cx="64"
+                cy="64"
+                r="56"
+                stroke="#f98006"
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={352}
+                strokeDashoffset={352 - (352 * displayScore) / 100}
+                className="transition-all duration-[2500ms] ease-out"
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
+              <span className="text-5xl font-black tracking-tighter text-white leading-none">
+                {displayScore}
+              </span>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-1">Score</span>
+            </div>
+          </div>
+          <div className={`transition-opacity duration-1000 ${displayScore > 50 ? 'opacity-100' : 'opacity-0'}`}>
+            <h2 className="text-3xl font-extrabold tracking-tight mb-2 text-center">
+              {displayScore >= 80 ? 'Excellent!' : displayScore >= 60 ? 'Good Shot!' : 'Keep Practicing!'}
+            </h2>
+            <p className="text-muted text-sm font-medium text-center max-w-[200px] leading-relaxed mx-auto">
+              {displayScore >= 80 ? 'Your form is excellent!' : displayScore >= 60 ? 'Your form is looking solid.' : 'There is room for improvement.'}
+            </p>
+          </div>
         </div>
 
-        {/* Breakdown - Only show after score populates slightly */}
+        {/* Metrics */}
+        {analysisResult?.metrics && (
+          <div className={`mb-6 transition-all duration-1000 delay-300 ${displayScore > 10 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
+                <div className="text-2xl font-black text-primary mb-1">
+                  {Math.round(analysisResult.metrics.torsoStability * 100)}%
+                </div>
+                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Stability</div>
+              </div>
+              <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
+                <div className="text-2xl font-black text-primary mb-1">
+                  {Math.round(analysisResult.metrics.armAlignment * 100)}%
+                </div>
+                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Alignment</div>
+              </div>
+              <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
+                <div className="text-2xl font-black text-primary mb-1">
+                  {Math.round(analysisResult.metrics.wristFlick * 100)}%
+                </div>
+                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Flick</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Breakdown */}
         <div className={`space-y-6 transition-all duration-1000 delay-500 ${displayScore > 20 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            
-            {/* Strengths */}
+          {/* Strengths */}
+          {analysisResult?.strengths && analysisResult.strengths.length > 0 && (
             <div className="bg-surface rounded-3xl p-6 border border-white/5">
-                <h4 className="font-bold text-sm text-green-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <CheckCircle2 size={16} /> Strengths
-                </h4>
-                <ul className="space-y-3">
-                    <li className="flex gap-3 text-sm font-medium text-white/90">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2"></span>
-                        Excellent knee bend on preparation
-                    </li>
-                    <li className="flex gap-3 text-sm font-medium text-white/90">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2"></span>
-                        Consistent follow-through
-                    </li>
-                    <li className="flex gap-3 text-sm font-medium text-white/90">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2"></span>
-                        Good balance on landing
-                    </li>
-                </ul>
+              <h4 className="font-bold text-sm text-green-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <CheckCircle2 size={16} /> Strengths
+              </h4>
+              <ul className="space-y-3">
+                {analysisResult.strengths.map((strength, idx) => (
+                  <li key={idx} className="flex gap-3 text-sm font-medium text-white/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2"></span>
+                    {strength}
+                  </li>
+                ))}
+              </ul>
             </div>
+          )}
 
-            {/* Improvements */}
+          {/* Improvements */}
+          {analysisResult?.improvements && analysisResult.improvements.length > 0 && (
             <div className="bg-surface rounded-3xl p-6 border border-white/5">
-                <h4 className="font-bold text-sm text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <AlertCircle size={16} /> Improvements
-                </h4>
-                <ul className="space-y-3">
-                    <li className="flex gap-3 text-sm font-medium text-white/90">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>
-                        Release point is slightly late
-                    </li>
-                    <li className="flex gap-3 text-sm font-medium text-white/90">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>
-                        Elbow flaring out slightly on setup
-                    </li>
-                </ul>
+              <h4 className="font-bold text-sm text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+                <AlertCircle size={16} /> Improvements
+              </h4>
+              <ul className="space-y-3">
+                {analysisResult.improvements.map((improvement, idx) => (
+                  <li key={idx} className="flex gap-3 text-sm font-medium text-white/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>
+                    {improvement}
+                  </li>
+                ))}
+              </ul>
             </div>
+          )}
 
-            {/* Personalized Workout Recommendation */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] to-black rounded-3xl p-1 border border-primary/30 relative overflow-hidden group cursor-pointer hover:border-primary/60 transition-colors shadow-lg">
-                <div className="absolute top-0 right-0 p-10 bg-primary/10 blur-3xl rounded-full pointer-events-none"></div>
-                
-                <div className="bg-surface/50 backdrop-blur-sm rounded-[1.3rem] p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-primary text-black flex items-center justify-center shadow-lg shadow-primary/20">
-                            <Dumbbell size={20} />
-                        </div>
-                        <div>
-                             <h4 className="font-extrabold text-white leading-none">Personalized Workout</h4>
-                             <p className="text-[10px] text-primary font-bold uppercase tracking-wider mt-1">AI Generated Plan</p>
-                        </div>
-                    </div>
-                    
-                    <p className="text-xs text-muted font-medium mb-4 leading-relaxed">
-                        We have created a personalized workout to help you improve your <span className="text-white font-bold">{selectedShot?.title}</span> mechanics, focusing specifically on your elbow alignment.
-                    </p>
-
-                    <div className="flex items-center justify-between border-t border-white/10 pt-4">
-                        <div className="flex gap-3">
-                            <span className="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">15 Min</span>
-                            <span className="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">Med Intensity</span>
-                        </div>
-                        <ChevronRight size={18} className="text-primary" />
-                    </div>
-                </div>
+          {/* Suggested Drills */}
+          <div className="bg-surface rounded-3xl p-6 border border-white/5">
+            <h4 className="font-bold text-sm text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Dumbbell size={16} className="text-primary" /> Suggested Drills (10 min)
+            </h4>
+            <div className="space-y-4">
+              <div>
+                <p className="font-bold text-sm text-white mb-1">Form shooting (1 hand) — 3×10 reps</p>
+                <p className="text-xs text-muted">Focus on shoulder-elbow-wrist alignment with a soft release.</p>
+              </div>
+              <div>
+                <p className="font-bold text-sm text-white mb-1">Follow-through hold — 3×8 shots</p>
+                <p className="text-xs text-muted">Hold your wrist "down" for 1 second after release.</p>
+              </div>
+              <div>
+                <p className="font-bold text-sm text-white mb-1">Stick landing — 3×6 shots</p>
+                <p className="text-xs text-muted">Finish balanced and still when you land.</p>
+              </div>
             </div>
+          </div>
 
-             <button 
-                onClick={handleBack}
-                className="w-full bg-white/5 text-white font-bold text-sm py-4 rounded-2xl hover:bg-white/10 transition-colors"
-            >
-                Analyze Another Shot
-            </button>
+          <button
+            onClick={() => {
+              setViewState('selection');
+              setSelectedShot(null);
+              setVideoUrl(null);
+              setAnalysisResult(null);
+            }}
+            className="w-full bg-primary text-black font-extrabold text-sm py-4 rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+          >
+            <Sparkles size={18} />
+            Analyze Another Shot
+          </button>
         </div>
-    </div>
-  );
+      </div>
+    );
+  };
 
 
   // -- Main Render Switch --

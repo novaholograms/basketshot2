@@ -14,3 +14,20 @@ export interface Stat {
   unit?: string;
   total?: string;
 }
+
+export interface PoseMetrics {
+  torsoStability: number;
+  armAlignment: number;
+  wristFlick: number;
+}
+
+export interface AnalysisResult {
+  score: number;
+  metrics: PoseMetrics;
+  strengths: string[];
+  improvements: string[];
+  isInvalid: boolean;
+  messageIfInvalid?: string;
+  processedFrames: number;
+  totalFrames: number;
+}
