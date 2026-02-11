@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles } from 'lucide-react';
 import { ViewType } from '../types';
@@ -23,7 +23,34 @@ const FAVORITE_WORKOUTS = [
 ];
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, updateProfile } = useAuth();
+  const currentName = useMemo(() => (profile?.full_name ?? '').trim(), [profile?.full_name]);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
+  const canSave = editName.trim().length >= 2 && editName.trim().length <= 50;
+
+  const openEdit = () => {
+    setEditName(currentName);
+    setIsEditingName(true);
+  };
+
+  const closeEdit = () => {
+    setIsEditingName(false);
+    setEditName('');
+  };
+
+  const saveName = async () => {
+    const n = editName.trim();
+    if (n.length < 2 || n.length > 50) return;
+    setIsSavingName(true);
+    try {
+      await updateProfile({ full_name: n || null });
+      closeEdit();
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   return (
     <div className="pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -44,22 +71,28 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
         <div className="bg-surface rounded-3xl p-6 border border-white/5 relative overflow-hidden">
           
           {/* Edit Button - Top Right */}
-          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-colors z-20">
-             <Edit2 size={16} />
+          <button
+            type="button"
+            onClick={openEdit}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-colors z-20"
+          >
+            <Edit2 size={16} />
           </button>
 
           <div className="flex flex-col items-center text-center relative z-10">
             <div className="relative mb-4">
                 <div className="w-24 h-24 rounded-full p-1 border-2 border-primary/50">
-                    <img 
-                        src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
-                        alt="Profile" 
+                    <img
+                        src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
+                        alt="Profile"
                         className="w-full h-full rounded-full object-cover"
                     />
                 </div>
             </div>
-            
-            <h2 className="text-2xl font-extrabold tracking-tight mb-1">Jordan Carter</h2>
+
+            <h2 className="text-2xl font-extrabold tracking-tight mb-1">
+              {currentName || 'User'}
+            </h2>
             <div className="flex items-center gap-2 text-muted text-sm font-medium mb-4">
                 <Mail size={14} />
                 <span>{user?.email ?? ''}</span>
@@ -175,6 +208,47 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
             </button>
         </div>
       </section>
+
+      {/* Edit Name Modal */}
+      {isEditingName && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6">
+          <div className="w-full max-w-md rounded-3xl bg-surface border border-white/10 p-5">
+            <h3 className="text-lg font-extrabold tracking-tight mb-1">Edit name</h3>
+            <p className="text-muted text-sm font-medium mb-4">2–50 characters.</p>
+
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              maxLength={50}
+              placeholder="Your name"
+              className="w-full rounded-2xl bg-background border border-white/10 px-4 py-3 text-base font-semibold outline-none focus:border-primary transition-colors"
+            />
+
+            {!canSave && editName.trim().length > 0 && (
+              <p className="mt-2 text-xs text-red-400 font-semibold">Name must be 2–50 characters.</p>
+            )}
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={closeEdit}
+                className="flex-1 rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-sm font-extrabold hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveName}
+                disabled={!canSave || isSavingName}
+                className="flex-1 rounded-2xl bg-primary px-4 py-3 text-sm font-extrabold text-black disabled:opacity-60 hover:bg-primary/90 transition-colors"
+              >
+                {isSavingName ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

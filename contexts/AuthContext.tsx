@@ -11,6 +11,7 @@ export type ProfileRow = {
   premium_source: string | null;
   premium_expires_at: string | null;
   email?: string | null;
+  full_name?: string | null;
   height_cm?: number | null;
   weight_kg?: number | null;
   wingspan_cm?: number | null;
@@ -37,6 +38,7 @@ type AuthContextValue = {
         | "premium_source"
         | "premium_expires_at"
         | "email"
+        | "full_name"
         | "height_cm"
         | "weight_kg"
         | "wingspan_cm"
@@ -130,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         | "premium_source"
         | "premium_expires_at"
         | "email"
+        | "full_name"
         | "height_cm"
         | "weight_kg"
         | "wingspan_cm"

@@ -8,6 +8,7 @@ interface OnboardingViewProps {
 }
 
 const STEPS = [
+  { id: 'name', title: 'Name' },
   { id: 'height', title: 'Height' },
   { id: 'weight', title: 'Weight' },
   { id: 'wingspan', title: 'Wingspan' },
@@ -40,13 +41,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
   const [wingspanUnit, setWingspanUnit] = useState<'cm' | 'ft'>('cm');
 
   // Form State (Internal storage is Metric)
+  const [fullName, setFullName] = useState('');
   const [height, setHeight] = useState(180); // cm
   const [weight, setWeight] = useState(75); // kg
   const [wingspan, setWingspan] = useState(185); // cm
-  
+
   const [position, setPosition] = useState<string>('');
   const [level, setLevel] = useState<string>('');
-  
+
   const [attributes, setAttributes] = useState<string[]>([]);
   const [improvements, setImprovements] = useState<string[]>([]);
   const [usage, setUsage] = useState<string>('');
@@ -77,6 +79,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
   };
 
   const handleNext = async () => {
+    if (currentStep === 0) {
+      const n = fullName.trim();
+      if (n.length < 2 || n.length > 50) return;
+    }
+
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
@@ -86,6 +93,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
       };
 
       const onboarding_data = {
+        name: fullName.trim(),
         height_cm: height,
         weight_kg: weight,
         wingspan_cm: wingspan,
@@ -101,6 +109,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
       const res = await updateProfile({
         onboarding_completed: true,
         onboarding_data,
+        full_name: fullName.trim() || null,
         height_cm: toNum(height),
         weight_kg: toNum(weight),
         wingspan_cm: toNum(wingspan),
@@ -131,6 +140,39 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
   };
 
   // --- Render Steps ---
+
+  const renderNameStep = () => {
+    const value = fullName;
+    const trimmed = value.trim();
+    const isValid = trimmed.length >= 2 && trimmed.length <= 50;
+
+    return (
+      <div className="space-y-10 animate-in slide-in-from-right duration-500">
+        <div className="text-center mb-4">
+          <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+            <User size={32} />
+          </div>
+          <h2 className="text-3xl font-extrabold mb-2">What&apos;s your name?</h2>
+          <p className="text-muted text-sm">This will personalize your experience.</p>
+        </div>
+
+        <div className="space-y-4 px-4">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setFullName(e.target.value)}
+            maxLength={50}
+            placeholder="Your name"
+            className="w-full rounded-2xl bg-surface border border-white/10 px-4 py-3 text-base font-semibold outline-none focus:border-primary transition-colors"
+          />
+
+          {!isValid && trimmed.length > 0 && (
+            <p className="text-xs text-red-400 font-semibold">Name must be 2–50 characters.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderUnitToggle = (current: string, setUnit: (u: any) => void, opt1: string, opt2: string) => (
     <div className="flex bg-surface rounded-full p-1 border border-white/10 w-fit mx-auto mb-6">
@@ -444,14 +486,15 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
 
       {/* Content Area */}
       <div className="flex-1 pb-24">
-        {currentStep === 0 && renderHeightStep()}
-        {currentStep === 1 && renderWeightStep()}
-        {currentStep === 2 && renderWingspanStep()}
-        {currentStep === 3 && renderPositionStep()}
-        {currentStep === 4 && renderLevelStep()}
-        {currentStep === 5 && renderAttributesStep()}
-        {currentStep === 6 && renderImprovementsStep()}
-        {currentStep === 7 && renderUsageStep()}
+        {currentStep === 0 && renderNameStep()}
+        {currentStep === 1 && renderHeightStep()}
+        {currentStep === 2 && renderWeightStep()}
+        {currentStep === 3 && renderWingspanStep()}
+        {currentStep === 4 && renderPositionStep()}
+        {currentStep === 5 && renderLevelStep()}
+        {currentStep === 6 && renderAttributesStep()}
+        {currentStep === 7 && renderImprovementsStep()}
+        {currentStep === 8 && renderUsageStep()}
       </div>
 
       {/* Bottom Action */}
