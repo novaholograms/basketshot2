@@ -80,6 +80,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
+      const toNum = (v: any) => {
+        const n = Number(String(v).replace(",", ".").trim());
+        return Number.isFinite(n) ? n : null;
+      };
+
       const onboarding_data = {
         height_cm: height,
         weight_kg: weight,
@@ -96,6 +101,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
       const res = await updateProfile({
         onboarding_completed: true,
         onboarding_data,
+        height_cm: toNum(height),
+        weight_kg: toNum(weight),
+        wingspan_cm: toNum(wingspan),
       });
 
       if (res.ok === true) {

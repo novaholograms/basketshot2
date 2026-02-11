@@ -10,6 +10,10 @@ export type ProfileRow = {
   is_premium: boolean;
   premium_source: string | null;
   premium_expires_at: string | null;
+  email?: string | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  wingspan_cm?: number | null;
 };
 
 type AuthContextValue = {
@@ -27,7 +31,15 @@ type AuthContextValue = {
     patch: Partial<
       Pick<
         ProfileRow,
-        "onboarding_completed" | "onboarding_data" | "is_premium" | "premium_source" | "premium_expires_at"
+        | "onboarding_completed"
+        | "onboarding_data"
+        | "is_premium"
+        | "premium_source"
+        | "premium_expires_at"
+        | "email"
+        | "height_cm"
+        | "weight_kg"
+        | "wingspan_cm"
       >
     >
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -112,7 +124,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     patch: Partial<
       Pick<
         ProfileRow,
-        "onboarding_completed" | "onboarding_data" | "is_premium" | "premium_source" | "premium_expires_at"
+        | "onboarding_completed"
+        | "onboarding_data"
+        | "is_premium"
+        | "premium_source"
+        | "premium_expires_at"
+        | "email"
+        | "height_cm"
+        | "weight_kg"
+        | "wingspan_cm"
       >
     >
   ) => {
