@@ -26,7 +26,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Dunking",
-    image: "https://images.pexels.com/photos/22674721/pexels-photo-22674721.jpeg?cs=srgb&dl=pexels-sincegameon-22674721.jpg&fm=jpg",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Blake%20Griffin%20dunk.jpg",
     duration: "45 min",
     intensity: "High",
     category: "Finishing"
