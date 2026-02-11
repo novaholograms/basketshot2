@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { ViewType } from '../types';
 import { ChevronLeft, ChevronRight, Check, Ruler, Weight, Activity, User, Target, Zap, Trophy, Briefcase, ArrowRight } from 'lucide-react';
 
@@ -31,7 +30,6 @@ const ATTRIBUTES_LIST = [
 ];
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) => {
-  const { updateProfile } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
 
   // Unit State
@@ -76,33 +74,12 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      const onboarding_data = {
-        height_cm: height,
-        weight_kg: weight,
-        wingspan_cm: wingspan,
-        position,
-        level,
-        attributes,
-        improvements,
-        usage,
-        units: { heightUnit, weightUnit, wingspanUnit },
-        completed_at: new Date().toISOString(),
-      };
-
-      const res = await updateProfile({
-        onboarding_completed: true,
-        onboarding_data,
-      });
-
-      if (res.ok === true) {
-        onNavigate('home');
-      } else {
-        console.error('[ONBOARDING] updateProfile error:', res.error);
-      }
+      // Finish
+      onNavigate('home');
     }
   };
 

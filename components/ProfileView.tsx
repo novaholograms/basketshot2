@@ -1,5 +1,4 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles } from 'lucide-react';
 import { ViewType } from '../types';
 
@@ -23,8 +22,6 @@ const FAVORITE_WORKOUTS = [
 ];
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
-  const { user, profile, signOut } = useAuth();
-
   return (
     <div className="pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -62,12 +59,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
             <h2 className="text-2xl font-extrabold tracking-tight mb-1">Jordan Carter</h2>
             <div className="flex items-center gap-2 text-muted text-sm font-medium mb-4">
                 <Mail size={14} />
-                <span>{user?.email ?? ''}</span>
+                <span>jordan.carter@example.com</span>
             </div>
 
             <div className="flex gap-2">
                 <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                    {profile?.is_premium ? 'Premium' : 'Free'}
+                    Pro Member
                 </span>
             </div>
           </div>
@@ -153,7 +150,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
       {/* Account Actions */}
       <section>
         <div className="space-y-3">
-            <button type="button" onClick={() => void signOut()} className="w-full p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors group text-left">
+            <button className="w-full p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors group text-left">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-white/5 text-white flex items-center justify-center group-hover:text-red-400 transition-colors">
                         <LogOut size={20} />
