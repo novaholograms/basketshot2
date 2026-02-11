@@ -46,3 +46,23 @@ export interface AnalysisResult {
   totalFrames: number;
   aiCoachTip?: CoachTip;
 }
+
+export interface ShotAnalysisRow {
+  id: string;
+  user_id: string;
+  created_at: string;
+  shot_type: string | null;
+  score: number | null;
+  metrics: ShotMetrics;
+  strengths: string[];
+  improvements: string[];
+  ai_coach_tip: CoachTip | null;
+  engine_version: string | null;
+  source: string;
+  video_meta: {
+    processedFrames: number;
+    totalFrames: number;
+  };
+}
+
+export type ShotAnalysisInsert = Omit<ShotAnalysisRow, 'id' | 'created_at'>;

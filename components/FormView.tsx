@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
-import type { AnalysisResult } from '../types';
+import type { AnalysisResult, ShotAnalysisRow } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
+import { useAuth } from '../contexts/AuthContext';
+import { saveShotAnalysis, fetchRecentShotAnalyses } from '../services/analysisStorage';
+import { addToCache, getCachedAnalyses, setCachedAnalyses } from '../utils/analysisCache';
 
 const SHOT_TYPES = [
   {
@@ -42,16 +45,12 @@ const LOADING_STEPS = [
   "Creating your improvement plan…"
 ];
 
-const MOCK_HISTORY = [
-    { id: 101, type: '3pt', date: 'Oct 24', score: 82, thumbnail: 'https://images.unsplash.com/photo-1546519638-68e109498ee3?auto=format&fit=crop&w=150&q=80' },
-    { id: 102, type: 'ft', date: 'Oct 22', score: 94, thumbnail: 'https://images.unsplash.com/photo-1504454172868-95837845926d?auto=format&fit=crop&w=150&q=80' },
-    { id: 103, type: 'layup', date: 'Oct 20', score: 65, thumbnail: 'https://images.unsplash.com/photo-1505666287802-931dc83948e9?auto=format&fit=crop&w=150&q=80' },
-    { id: 104, type: '3pt', date: 'Oct 18', score: 71, thumbnail: 'https://images.unsplash.com/photo-1519861531473-92002639313a?auto=format&fit=crop&w=150&q=80' },
-];
-
 type ViewState = 'selection' | 'upload' | 'preview' | 'analyzing' | 'results';
 
 export const FormView: React.FC = () => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   const [viewState, setViewState] = useState<ViewState>('selection');
   const [selectedShot, setSelectedShot] = useState<typeof SHOT_TYPES[0] | null>(null);
   const [showTips, setShowTips] = useState(false);
@@ -61,10 +60,12 @@ export const FormView: React.FC = () => {
 
   // Animation State
   const [displayScore, setDisplayScore] = useState(0);
-  
-  // History Filter State
+
+  // History State
+  const [history, setHistory] = useState<ShotAnalysisRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<string>('all');
-  
+
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -105,6 +106,30 @@ export const FormView: React.FC = () => {
       });
 
       setAnalysisResult(result);
+
+      if (userId && !result.isInvalid) {
+        try {
+          const row = await saveShotAnalysis({
+            user_id: userId,
+            shot_type: selectedShot?.id ?? null,
+            score: result.score,
+            metrics: result.metrics,
+            strengths: result.strengths,
+            improvements: result.improvements,
+            ai_coach_tip: result.aiCoachTip ?? null,
+            engine_version: null,
+            source: 'client',
+            video_meta: {
+              processedFrames: result.processedFrames,
+              totalFrames: result.totalFrames,
+            },
+          });
+          const updatedHistory = addToCache(userId, row);
+          setHistory(updatedHistory);
+        } catch (saveError) {
+          console.warn('[ANALYSIS] save error:', saveError);
+        }
+      }
 
       setTimeout(() => {
         setViewState('results');
@@ -154,6 +179,36 @@ export const FormView: React.FC = () => {
 
   // -- Effects --
 
+  // Load history from cache and Supabase
+  useEffect(() => {
+    if (!userId) return;
+
+    const cached = getCachedAnalyses(userId);
+    if (cached.length > 0) {
+      setHistory(cached);
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      setHistoryLoading(true);
+      try {
+        const fresh = await fetchRecentShotAnalyses(userId, 20);
+        if (cancelled) return;
+        setHistory(fresh);
+        setCachedAnalyses(userId, fresh);
+      } catch (error) {
+        console.warn('[HISTORY] fetch error:', error);
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   // Cycle through loading text
   useEffect(() => {
     if (viewState === 'analyzing') {
@@ -196,9 +251,9 @@ export const FormView: React.FC = () => {
   }, [viewState, analysisResult]);
 
   // -- Filtered History Logic --
-  const filteredHistory = historyFilter === 'all' 
-    ? MOCK_HISTORY 
-    : MOCK_HISTORY.filter(item => item.type === historyFilter);
+  const filteredHistory = historyFilter === 'all'
+    ? history
+    : history.filter(item => item.shot_type === historyFilter);
 
   // -- Sub-Components --
 
@@ -285,27 +340,37 @@ export const FormView: React.FC = () => {
 
             {/* History List */}
             <div className="space-y-3">
-                {filteredHistory.length > 0 ? (
+                {historyLoading && history.length === 0 ? (
+                    <div className="text-center py-10 text-muted">
+                        <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+                        <p className="text-sm font-medium">Loading history...</p>
+                    </div>
+                ) : filteredHistory.length > 0 ? (
                     filteredHistory.map((item) => {
-                        const shotInfo = SHOT_TYPES.find(s => s.id === item.type);
+                        const shotInfo = SHOT_TYPES.find(s => s.id === item.shot_type);
+                        const date = new Date(item.created_at);
+                        const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
                         return (
-                            <div key={item.id} className="bg-surface p-3 rounded-2xl border border-white/5 flex items-center gap-4 hover:border-primary/20 transition-colors cursor-pointer group">
-                                <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-black flex-shrink-0">
-                                    <img src={item.thumbnail} alt="Analysis" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                    <div className="absolute inset-0 bg-black/20"></div>
-                                </div>
+                            <div
+                                key={item.id}
+                                className="bg-surface p-4 rounded-2xl border border-white/5 flex items-center gap-4 hover:border-primary/20 transition-colors cursor-pointer group"
+                                onClick={() => {
+                                    console.log('[HISTORY] clicked analysis:', item.id);
+                                }}
+                            >
                                 <div className="flex-1">
-                                    <h4 className="font-bold text-sm text-white mb-1">{shotInfo?.title || 'Shot'} Analysis</h4>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1 text-[10px] text-muted font-bold uppercase tracking-wide">
-                                            <Calendar size={10} />
-                                            {item.date}
-                                        </div>
+                                    <h4 className="font-bold text-sm text-white mb-1">
+                                        {shotInfo?.title || 'Shot'} Analysis
+                                    </h4>
+                                    <div className="flex items-center gap-1 text-[10px] text-muted font-bold uppercase tracking-wide">
+                                        <Calendar size={10} />
+                                        {formattedDate}
                                     </div>
                                 </div>
                                 <div className="pr-2">
-                                    <div className={`text-lg font-black ${item.score >= 80 ? 'text-primary' : 'text-white'}`}>
-                                        {item.score}
+                                    <div className={`text-2xl font-black ${(item.score ?? 0) >= 80 ? 'text-primary' : 'text-white'}`}>
+                                        {item.score ?? '-'}
                                     </div>
                                 </div>
                             </div>
@@ -313,7 +378,7 @@ export const FormView: React.FC = () => {
                     })
                 ) : (
                     <div className="text-center py-10 text-muted">
-                        <p className="text-sm font-medium">No analysis found.</p>
+                        <p className="text-sm font-medium">No analyses found.</p>
                     </div>
                 )}
             </div>

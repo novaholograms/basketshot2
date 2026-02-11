@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
+import { clearAnalysesCache } from "../utils/analysisCache";
 
 export type ProfileRow = {
   id: string;
@@ -119,6 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (user?.id) {
+      clearAnalysesCache(user.id);
+    }
     await supabase.auth.signOut();
   };
 
