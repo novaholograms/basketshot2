@@ -1,4 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { useAuth } from './contexts/AuthContext';
+import { AuthView } from './components/AuthView';
+import { PaywallView } from './components/PaywallView';
 import { Header } from './components/Header';
 import { StatCard } from './components/StatCard';
 import { ActionBanner } from './components/ActionBanner';
@@ -74,7 +77,29 @@ const INITIAL_SESSIONS: Session[] = [
 ];
 
 const App: React.FC = () => {
+  const { session, profile, loading } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('home');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background text-white max-w-md mx-auto flex items-center justify-center">
+        <div className="text-sm text-muted font-bold">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!session) return <AuthView />;
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-background text-white max-w-md mx-auto flex items-center justify-center">
+        <div className="text-sm text-muted font-bold">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (!profile.onboarding_completed) return <OnboardingView onNavigate={setCurrentView} />;
+  if (!profile.is_premium) return <PaywallView />;
+
   const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
