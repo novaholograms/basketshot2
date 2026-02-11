@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 export const PRESET_WORKOUTS = [
   {
     title: "3-Point Shooting",
-    image: "https://commons.wikimedia.org/wiki/Special:FilePath/20130103%20Nik%20Stauskas%20three.jpg",
+    image:"https://commons.wikimedia.org/wiki/Special:FilePath/Minnesota%20Lynx%20player%20Cecilia%20Zandalasini%20%289%29%20attempts%20a%203%20point%20shot.jpg",
     duration: "20 min",
     intensity: "High",
     category: "Shooting"
