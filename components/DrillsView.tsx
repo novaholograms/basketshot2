@@ -19,7 +19,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Handles",
-    image: "https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.pexels.com/photos/8693988/pexels-photo-8693988.jpeg?cs=srgb&dl=pexels-yaroslav-shuraev-8693988.jpg&fm=jpg",
     duration: "30 min",
     intensity: "High",
     category: "Dribbling"
