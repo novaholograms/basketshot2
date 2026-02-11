@@ -33,7 +33,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Layups",
-    image: "https://images.unsplash.com/photo-1505666287802-931dc83948e9?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.pexels.com/photos/8979865/pexels-photo-8979865.jpeg?cs=srgb&dl=pexels-pnw-prod-8979865.jpg&fm=jpg",
     duration: "10 min",
     intensity: "Low",
     category: "Finishing"
