@@ -40,7 +40,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Mid-Range",
-    image: "https://images.unsplash.com/photo-1519861531473-92002639313a?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.pexels.com/photos/33438371/pexels-photo-33438371.jpeg?cs=srgb&dl=pexels-tahir-33438371.jpg&fm=jpg",
     duration: "25 min",
     intensity: "Med",
     category: "Shooting"
