@@ -12,7 +12,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Weak Hand",
-    image: "https://images.pexels.com/photos/8084841/pexels-photo-8084841.jpeg?cs=srgb&dl=pexels-roman-odintsov-8084841.jpg&fm=jpg",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/20160330%20MCDAAG%20Marques%20Bolden%20left-handed%20dunk.jpg",
     duration: "15 min",
     intensity: "Med",
     category: "Dribbling"
