@@ -79,6 +79,40 @@ const INITIAL_SESSIONS: Session[] = [
 const App: React.FC = () => {
   const { session, profile, loading } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
+  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
+  const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
+
+  // Calculate Stats based on Sessions and Time Range
+  const stats = useMemo(() => {
+    const baseSessions = sessions.length;
+
+    // Calculate average accuracy (filter out 0 or undefined if needed, assuming simple average for mock)
+    const validSessions = sessions.filter(s => typeof s.accuracy === 'number');
+    const sumAccuracy = validSessions.reduce((acc, curr) => acc + curr.accuracy, 0);
+    const baseAvgAccuracy = validSessions.length > 0 ? Math.round(sumAccuracy / validSessions.length) : 0;
+
+    // Base time calculation
+    const baseTotalTime = baseSessions * 20; // Avg 20 min per session
+
+    // Apply mock multipliers to simulate different time ranges
+    let multiplier = 1;
+    let accuracyModifier = 0;
+
+    if (timeRange === 'week') {
+        multiplier = 1; // Use actual mock data count for 'week' logic roughly
+        accuracyModifier = -2;
+    } else if (timeRange === 'month') {
+        multiplier = 4;
+        accuracyModifier = 3;
+    }
+
+    return {
+      accuracy: Math.min(100, Math.max(0, baseAvgAccuracy + accuracyModifier)),
+      sessionsCompleted: timeRange === 'today' ? 3 : baseSessions * multiplier,
+      totalTime: timeRange === 'today' ? 45 : baseTotalTime * multiplier
+    };
+  }, [sessions, timeRange]);
 
   if (loading) {
     return (
@@ -99,41 +133,6 @@ const App: React.FC = () => {
 
   if (!profile.onboarding_completed) return <OnboardingView onNavigate={setCurrentView} />;
   if (!profile.is_premium) return <PaywallView />;
-
-  const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
-  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
-  const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
-
-  // Calculate Stats based on Sessions and Time Range
-  const stats = useMemo(() => {
-    const baseSessions = sessions.length;
-    
-    // Calculate average accuracy (filter out 0 or undefined if needed, assuming simple average for mock)
-    const validSessions = sessions.filter(s => typeof s.accuracy === 'number');
-    const sumAccuracy = validSessions.reduce((acc, curr) => acc + curr.accuracy, 0);
-    const baseAvgAccuracy = validSessions.length > 0 ? Math.round(sumAccuracy / validSessions.length) : 0;
-    
-    // Base time calculation
-    const baseTotalTime = baseSessions * 20; // Avg 20 min per session
-
-    // Apply mock multipliers to simulate different time ranges
-    let multiplier = 1;
-    let accuracyModifier = 0;
-
-    if (timeRange === 'week') {
-        multiplier = 1; // Use actual mock data count for 'week' logic roughly
-        accuracyModifier = -2; 
-    } else if (timeRange === 'month') {
-        multiplier = 4;
-        accuracyModifier = 3;
-    }
-
-    return {
-      accuracy: Math.min(100, Math.max(0, baseAvgAccuracy + accuracyModifier)),
-      sessionsCompleted: timeRange === 'today' ? 3 : baseSessions * multiplier,
-      totalTime: timeRange === 'today' ? 45 : baseTotalTime * multiplier
-    };
-  }, [sessions, timeRange]);
 
   const handleWorkoutComplete = (data: { title: string; shotsMade?: number; shotsAttempted?: number; duration: number }) => {
     let accuracy = 100;
