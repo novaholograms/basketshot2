@@ -113,7 +113,18 @@ export const FormView: React.FC = () => {
       console.error('Analysis error:', error);
       setAnalysisResult({
         score: 0,
-        metrics: { torsoStability: 0, armAlignment: 0, wristFlick: 0 },
+        metrics: {
+          stanceWidth: 0,
+          lateralSway: 0,
+          kneeDip: 0,
+          verticalDrive: 0,
+          elbowAlignment: 0,
+          elbowUnderBall: 0,
+          releaseHeight: 0,
+          wristFlick: 0,
+          followThroughHold: 0,
+          landingBalance: 0,
+        },
         strengths: [],
         improvements: [],
         isInvalid: true,
@@ -504,24 +515,30 @@ export const FormView: React.FC = () => {
         {/* Metrics */}
         {analysisResult?.metrics && (
           <div className={`mb-6 transition-all duration-1000 delay-300 ${displayScore > 10 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
                 <div className="text-2xl font-black text-primary mb-1">
-                  {Math.round(analysisResult.metrics.torsoStability * 100)}%
+                  {Math.round(analysisResult.metrics.elbowAlignment * 100)}%
                 </div>
-                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Stability</div>
+                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Alignment</div>
               </div>
               <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
                 <div className="text-2xl font-black text-primary mb-1">
-                  {Math.round(analysisResult.metrics.armAlignment * 100)}%
+                  {Math.round(analysisResult.metrics.releaseHeight * 100)}%
                 </div>
-                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Alignment</div>
+                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Release</div>
               </div>
               <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
                 <div className="text-2xl font-black text-primary mb-1">
                   {Math.round(analysisResult.metrics.wristFlick * 100)}%
                 </div>
                 <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Flick</div>
+              </div>
+              <div className="bg-surface rounded-2xl p-4 border border-white/5 text-center">
+                <div className="text-2xl font-black text-primary mb-1">
+                  {Math.round(analysisResult.metrics.lateralSway * 100)}%
+                </div>
+                <div className="text-[10px] font-bold text-muted uppercase tracking-wider">Stability</div>
               </div>
             </div>
           </div>
@@ -550,16 +567,43 @@ export const FormView: React.FC = () => {
           {analysisResult?.improvements && analysisResult.improvements.length > 0 && (
             <div className="bg-surface rounded-3xl p-6 border border-white/5">
               <h4 className="font-bold text-sm text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-                <AlertCircle size={16} /> Improvements
+                <AlertCircle size={16} /> Areas to Improve
               </h4>
-              <ul className="space-y-3">
+              <div className="space-y-4">
                 {analysisResult.improvements.map((improvement, idx) => (
-                  <li key={idx} className="flex gap-3 text-sm font-medium text-white/90">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>
-                    {improvement}
-                  </li>
+                  <div key={idx} className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                    <p className="text-sm font-medium text-white/90 leading-relaxed whitespace-pre-line">
+                      {improvement}
+                    </p>
+                  </div>
                 ))}
-              </ul>
+              </div>
+            </div>
+          )}
+
+          {/* AI Coach Tip */}
+          {analysisResult?.aiCoachTip && (
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl p-6 border-2 border-primary/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+              <div className="relative">
+                <h4 className="font-bold text-base text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Sparkles size={18} /> {analysisResult.aiCoachTip.title}
+                </h4>
+                <p className="text-sm font-semibold text-white mb-3 leading-relaxed">
+                  {analysisResult.aiCoachTip.mainIssueTitle}
+                </p>
+                <div className="bg-black/30 rounded-xl p-4 mb-3">
+                  <p className="text-sm font-medium text-white/90 leading-relaxed whitespace-pre-line">
+                    {analysisResult.aiCoachTip.body}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target size={16} className="text-primary" />
+                  <p className="text-xs font-bold text-white">
+                    With focused practice, you can reach <span className="text-primary text-base">{analysisResult.aiCoachTip.targetScore}</span>
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
