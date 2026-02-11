@@ -12,7 +12,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Weak Hand",
-    image: "https://images.unsplash.com/photo-1533596773223-9366ebf0945a?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.pexels.com/photos/8084841/pexels-photo-8084841.jpeg?cs=srgb&dl=pexels-roman-odintsov-8084841.jpg&fm=jpg",
     duration: "15 min",
     intensity: "Med",
     category: "Dribbling"
