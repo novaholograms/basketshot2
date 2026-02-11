@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 export const PRESET_WORKOUTS = [
   {
     title: "3-Point Shooting",
-    image: https:"https://commons.wikimedia.org/wiki/Special:FilePath/3-point%20shoot%20by%20Patrick%20Beverley%202011-03-19.JPG",
+    image:"https://commons.wikimedia.org/wiki/Special:FilePath/3-point%20shoot%20by%20Patrick%20Beverley%202011-03-19.JPG",
     duration: "20 min",
     intensity: "High",
     category: "Shooting"
