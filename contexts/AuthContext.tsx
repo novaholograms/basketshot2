@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
 
@@ -51,10 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(data as ProfileRow);
   };
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (!user?.id) return;
     await fetchProfile(user.id);
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     let alive = true;
@@ -108,23 +108,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const updateProfile = async (
-    patch: Partial<
-      Pick<
-        ProfileRow,
-        "onboarding_completed" | "onboarding_data" | "is_premium" | "premium_source" | "premium_expires_at"
+  const updateProfile = useCallback(
+    async (
+      patch: Partial<
+        Pick<
+          ProfileRow,
+          "onboarding_completed" | "onboarding_data" | "is_premium" | "premium_source" | "premium_expires_at"
+        >
       >
-    >
-  ) => {
-    if (!user?.id) return { ok: false as const, error: "No user logged in" };
+    ) => {
+      if (!user?.id) return { ok: false as const, error: "No user logged in" };
 
-    const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
+      const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
 
-    if (error) return { ok: false as const, error: error.message };
+      if (error) return { ok: false as const, error: error.message };
 
-    await refreshProfile();
-    return { ok: true as const };
-  };
+      await fetchProfile(user.id);
+      return { ok: true as const };
+    },
+    [user?.id]
+  );
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -138,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile,
       updateProfile,
     }),
-    [user, session, profile, loading]
+    [user, session, profile, loading, signUp, signIn, signOut, refreshProfile, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
