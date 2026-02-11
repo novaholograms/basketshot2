@@ -26,7 +26,7 @@ export const PRESET_WORKOUTS = [
   },
   {
     title: "Dunking",
-    image: "https://images.unsplash.com/photo-1509027572446-af8401acfdc3?auto=format&fit=crop&w=600&q=80",
+    image: "https://images.pexels.com/photos/22674721/pexels-photo-22674721.jpeg?cs=srgb&dl=pexels-sincegameon-22674721.jpg&fm=jpg",
     duration: "45 min",
     intensity: "High",
     category: "Finishing"
