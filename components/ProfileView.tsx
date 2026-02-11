@@ -26,27 +26,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const { user, profile, signOut, updateProfile } = useAuth();
   const currentName = useMemo(() => (profile?.full_name ?? '').trim(), [profile?.full_name]);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editName, setEditName] = useState('');
+  const [nameDraft, setNameDraft] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
-  const canSave = editName.trim().length >= 2 && editName.trim().length <= 50;
 
-  const openEdit = () => {
-    setEditName(currentName);
+  const trimmedDraft = nameDraft.trim();
+  const isValidName = trimmedDraft.length >= 2 && trimmedDraft.length <= 50;
+  const isDirty = currentName !== trimmedDraft;
+
+  const toggleEditName = () => {
+    if (isEditingName) {
+      setIsEditingName(false);
+      setNameDraft('');
+      return;
+    }
+    setNameDraft(currentName);
     setIsEditingName(true);
   };
 
-  const closeEdit = () => {
-    setIsEditingName(false);
-    setEditName('');
-  };
-
   const saveName = async () => {
-    const n = editName.trim();
-    if (n.length < 2 || n.length > 50) return;
+    const n = trimmedDraft;
+    if (!isValidName) return;
     setIsSavingName(true);
     try {
       await updateProfile({ full_name: n || null });
-      closeEdit();
+      setIsEditingName(false);
+      setNameDraft('');
     } finally {
       setIsSavingName(false);
     }
@@ -73,8 +77,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
           {/* Edit Button - Top Right */}
           <button
             type="button"
-            onClick={openEdit}
+            onClick={toggleEditName}
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-primary hover:text-black transition-colors z-20"
+            aria-label="Edit name"
           >
             <Edit2 size={16} />
           </button>
@@ -90,9 +95,28 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
                 </div>
             </div>
 
-            <h2 className="text-2xl font-extrabold tracking-tight mb-1">
-              {currentName || 'User'}
-            </h2>
+            {!isEditingName ? (
+              <h2 className="text-2xl font-extrabold tracking-tight mb-1">
+                {currentName || 'User'}
+              </h2>
+            ) : (
+              <div className="w-full max-w-xs">
+                <input
+                  type="text"
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  maxLength={50}
+                  autoFocus
+                  className="w-full rounded-2xl bg-background border border-white/10 px-4 py-2.5 text-center text-lg font-extrabold outline-none focus:border-primary"
+                  placeholder="Your name"
+                />
+                {!isValidName && trimmedDraft.length > 0 && (
+                  <p className="mt-2 text-xs text-red-400 font-semibold">
+                    Name must be 2–50 characters.
+                  </p>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-2 text-muted text-sm font-medium mb-4">
                 <Mail size={14} />
                 <span>{user?.email ?? ''}</span>
@@ -103,6 +127,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
                     {profile?.is_premium ? 'Premium' : 'Free'}
                 </span>
             </div>
+
+            {isEditingName && (
+              <div className="w-full mt-4">
+                <button
+                  type="button"
+                  onClick={saveName}
+                  disabled={!isDirty || !isValidName || isSavingName}
+                  className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-extrabold text-black disabled:opacity-60"
+                >
+                  {isSavingName ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -208,47 +245,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
             </button>
         </div>
       </section>
-
-      {/* Edit Name Modal */}
-      {isEditingName && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6">
-          <div className="w-full max-w-md rounded-3xl bg-surface border border-white/10 p-5">
-            <h3 className="text-lg font-extrabold tracking-tight mb-1">Edit name</h3>
-            <p className="text-muted text-sm font-medium mb-4">2–50 characters.</p>
-
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              maxLength={50}
-              placeholder="Your name"
-              className="w-full rounded-2xl bg-background border border-white/10 px-4 py-3 text-base font-semibold outline-none focus:border-primary transition-colors"
-            />
-
-            {!canSave && editName.trim().length > 0 && (
-              <p className="mt-2 text-xs text-red-400 font-semibold">Name must be 2–50 characters.</p>
-            )}
-
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={closeEdit}
-                className="flex-1 rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-sm font-extrabold hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveName}
-                disabled={!canSave || isSavingName}
-                className="flex-1 rounded-2xl bg-primary px-4 py-3 text-sm font-extrabold text-black disabled:opacity-60 hover:bg-primary/90 transition-colors"
-              >
-                {isSavingName ? 'Saving…' : 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
