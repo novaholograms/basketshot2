@@ -140,6 +140,9 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
   };
 
   const startAnalysis = async () => {
+    console.log("[ONBOARDING] startAnalysis", { ts: Date.now(), videoUrl, shotType: selectedShot?.id });
+
+    console.log("[ONBOARDING] setStep -> analyzing");
     setStep('analyzing');
     setLoadingStepIndex(0);
     setDisplayScore(0);
@@ -147,7 +150,9 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
     if (!videoUrl) return;
 
     try {
+      console.log("[ONBOARDING] analyzeVideo begin");
       const result = await analyzeVideo(videoUrl, () => {});
+      console.log("[ONBOARDING] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });
       setAnalysisResult(result);
 
       if (userId && !result.isInvalid) {
@@ -174,10 +179,11 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
       }
 
       setTimeout(() => {
+        console.log("[ONBOARDING] setStep -> results");
         setStep('results');
       }, 800);
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('[ONBOARDING] Analysis error:', error);
       setAnalysisResult({
         score: 0,
         metrics: {
@@ -199,6 +205,7 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
         processedFrames: 0,
         totalFrames: 0,
       });
+      console.log("[ONBOARDING] setStep -> results (after error)");
       setStep('results');
     }
   };
@@ -334,6 +341,14 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
             className="w-full h-full object-cover"
             controls
             playsInline
+            onError={(e) => console.error("[VIDEO] onError", { e, ts: Date.now(), src: videoUrl })}
+            onStalled={() => console.warn("[VIDEO] stalled", { ts: Date.now() })}
+            onWaiting={() => console.warn("[VIDEO] waiting", { ts: Date.now() })}
+            onAbort={() => console.warn("[VIDEO] abort", { ts: Date.now() })}
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              console.log("[VIDEO] metadata", { duration: v.duration, w: v.videoWidth, h: v.videoHeight, readyState: v.readyState });
+            }}
           />
         )}
       </div>
@@ -359,6 +374,10 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
             loop
             muted
             playsInline
+            onError={(e) => console.error("[VIDEO] onError", { e, ts: Date.now(), src: videoUrl })}
+            onStalled={() => console.warn("[VIDEO] stalled", { ts: Date.now() })}
+            onWaiting={() => console.warn("[VIDEO] waiting", { ts: Date.now() })}
+            onAbort={() => console.warn("[VIDEO] abort", { ts: Date.now() })}
           />
         )}
 

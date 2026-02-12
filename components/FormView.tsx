@@ -94,6 +94,9 @@ export const FormView: React.FC = () => {
   };
 
   const startAnalysis = async () => {
+    console.log("[FORM] startAnalysis", { ts: Date.now(), videoUrl, shotType: selectedShot?.id });
+
+    console.log("[FORM] setViewState -> analyzing");
     setViewState('analyzing');
     setLoadingStepIndex(0);
     setDisplayScore(0);
@@ -101,9 +104,11 @@ export const FormView: React.FC = () => {
     if (!videoUrl) return;
 
     try {
+      console.log("[FORM] analyzeVideo begin");
       const result = await analyzeVideo(videoUrl, (percent) => {
         // Optional: could update UI with progress
       });
+      console.log("[FORM] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });
 
       setAnalysisResult(result);
 
@@ -132,10 +137,11 @@ export const FormView: React.FC = () => {
       }
 
       setTimeout(() => {
+        console.log("[FORM] setViewState -> results");
         setViewState('results');
       }, 800);
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('[FORM] Analysis error:', error);
       setAnalysisResult({
         score: 0,
         metrics: {
@@ -157,6 +163,7 @@ export const FormView: React.FC = () => {
         processedFrames: 0,
         totalFrames: 0
       });
+      console.log("[FORM] setViewState -> results (after error)");
       setViewState('results');
     }
   };
@@ -447,14 +454,22 @@ export const FormView: React.FC = () => {
 
       <div className="h-[55vh] bg-black rounded-3xl overflow-hidden relative border border-white/10 shadow-2xl shrink-0">
          {videoUrl && (
-            <video 
-                src={videoUrl} 
-                className="w-full h-full object-cover" 
+            <video
+                src={videoUrl}
+                className="w-full h-full object-cover"
                 controls={false}
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
+                autoPlay
+                loop
+                muted
+                playsInline
+                onError={(e) => console.error("[VIDEO] onError", { e, ts: Date.now(), src: videoUrl })}
+                onStalled={() => console.warn("[VIDEO] stalled", { ts: Date.now() })}
+                onWaiting={() => console.warn("[VIDEO] waiting", { ts: Date.now() })}
+                onAbort={() => console.warn("[VIDEO] abort", { ts: Date.now() })}
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  console.log("[VIDEO] metadata", { duration: v.duration, w: v.videoWidth, h: v.videoHeight, readyState: v.readyState });
+                }}
             />
          )}
          <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none"></div>
@@ -482,16 +497,20 @@ export const FormView: React.FC = () => {
     <div className="h-full flex flex-col justify-center animate-in fade-in duration-700 relative pb-20">
         <div className="relative w-full aspect-[9/16] max-h-[70vh] rounded-3xl overflow-hidden border border-primary/30 shadow-[0_0_30px_rgba(249,128,6,0.1)]">
             {videoUrl && (
-                <video 
-                    src={videoUrl} 
-                    className="w-full h-full object-cover opacity-60" 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline 
+                <video
+                    src={videoUrl}
+                    className="w-full h-full object-cover opacity-60"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    onError={(e) => console.error("[VIDEO] onError", { e, ts: Date.now(), src: videoUrl })}
+                    onStalled={() => console.warn("[VIDEO] stalled", { ts: Date.now() })}
+                    onWaiting={() => console.warn("[VIDEO] waiting", { ts: Date.now() })}
+                    onAbort={() => console.warn("[VIDEO] abort", { ts: Date.now() })}
                 />
             )}
-            
+
             {/* Scanning Overlay */}
             <div className="absolute inset-0 bg-primary/5 z-10"></div>
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center">

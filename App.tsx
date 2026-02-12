@@ -115,6 +115,17 @@ const App: React.FC = () => {
     };
   }, [sessions, timeRange]);
 
+  // DEBUG: Log app guard state
+  console.log("[APP] state", {
+    loading,
+    hasSession: !!session,
+    hasProfile: !!profile,
+    onboarding_completed: profile?.onboarding_completed,
+    is_premium: profile?.is_premium,
+    currentView,
+    ts: Date.now(),
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-white max-w-md mx-auto flex items-center justify-center">
