@@ -4,6 +4,7 @@ import { useRevenueCat } from '../contexts/RevenueCatContext';
 import { RevenueCatUI } from '@revenuecat/purchases-capacitor-ui';
 import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles, CreditCard } from 'lucide-react';
 import { ViewType } from '../types';
+import { deleteUserAccount } from '../services/deleteAccountService';
 
 interface ProfileViewProps {
   onNavigate?: (view: ViewType) => void;
@@ -31,6 +32,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
+  const userId = user?.id ?? null;
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canConfirmDelete = deleteText === 'DELETE';
 
   const trimmedDraft = nameDraft.trim();
   const isValidName = trimmedDraft.length >= 2 && trimmedDraft.length <= 50;
@@ -64,6 +71,39 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
       await RevenueCatUI.presentCustomerCenter();
     } catch (err: any) {
       console.error('Failed to open Customer Center:', err);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (!userId) return;
+    if (!canConfirmDelete) return;
+
+    try {
+      setIsDeleting(true);
+
+      await deleteUserAccount(userId);
+
+      try {
+        const keys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k) keys.push(k);
+        }
+        keys.forEach((k) => {
+          if (k.includes(userId)) localStorage.removeItem(k);
+        });
+      } catch {}
+
+      await signOut();
+
+      window.location.reload();
+    } catch (e) {
+      console.error('[profile] delete account failed:', e);
+      alert('Could not delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+      setDeleteText('');
     }
   };
 
@@ -270,7 +310,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
                 </div>
             </button>
 
-            <button className="w-full p-4 rounded-2xl border border-red-500/10 flex items-center justify-between hover:bg-red-500/10 transition-colors group text-left">
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(true)}
+              disabled={!userId}
+              className="w-full p-4 rounded-2xl border border-red-500/10 flex items-center justify-between hover:bg-red-500/10 transition-colors group text-left disabled:opacity-60 disabled:cursor-not-allowed"
+            >
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center">
                         <Trash2 size={20} />
@@ -284,6 +329,52 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
         </div>
       </section>
 
+
+      {isDeleteOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/90 p-5">
+            <div className="text-lg font-bold">Delete account?</div>
+            <div className="mt-2 text-sm text-white/70">
+              This cannot be undone. All your data will be permanently deleted.
+            </div>
+
+            <div className="mt-4 text-xs font-semibold text-white/80">Type DELETE to confirm</div>
+            <input
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              placeholder="DELETE"
+              className="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none"
+              autoFocus
+              disabled={isDeleting}
+            />
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isDeleting) return;
+                  setIsDeleteOpen(false);
+                  setDeleteText('');
+                }}
+                className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleConfirmDeleteAccount()}
+                disabled={!canConfirmDelete || isDeleting}
+                className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                style={{ background: '#ef4444' }}
+              >
+                {isDeleting ? 'Deleting...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
