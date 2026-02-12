@@ -668,7 +668,12 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
         <PaywallModal
           isOpen={showPaywall && !isPremium}
           onRequestClose={() => {
-            if (isPremium) setShowPaywall(false);
+            setShowPaywall(false);
+          }}
+          onContinue={() => {
+            setShowPaywall(false);
+            setShowGate(false);
+            handleDone();
           }}
           termsUrl="https://basketshot.ai/terms"
           privacyUrl="https://basketshot.ai/privacy"

@@ -6,6 +6,7 @@ import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
 type Props = {
   isOpen: boolean;
   onRequestClose: () => void;
+  onContinue?: () => void;
   termsUrl: string;
   privacyUrl: string;
 };
@@ -15,6 +16,7 @@ type PlanId = "annual" | "monthly";
 export default function PaywallModal({
   isOpen,
   onRequestClose,
+  onContinue,
   termsUrl,
   privacyUrl,
 }: Props) {
@@ -270,7 +272,8 @@ export default function PaywallModal({
             onClick={() => {
               if (!paymentsEnabled) {
                 // Modo test: permite seguir el flujo sin comprar
-                onRequestClose();
+                if (onContinue) onContinue();
+                else onRequestClose();
                 return;
               }
               handlePurchase();
