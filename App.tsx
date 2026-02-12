@@ -132,7 +132,9 @@ const App: React.FC = () => {
     );
   }
 
-  if (!profile.onboarding_completed) return <OnboardingView onNavigate={setCurrentView} />;
+  if (!profile.onboarding_completed && currentView !== 'onboarding-shot-analysis') {
+    return <OnboardingView onNavigate={setCurrentView} />;
+  }
   if (!profile.is_premium) return <PaywallView />;
 
   const handleWorkoutComplete = (data: { title: string; shotsMade?: number; shotsAttempted?: number; duration: number }) => {
