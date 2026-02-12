@@ -12,6 +12,7 @@ import { FormView } from './components/FormView';
 import { ProfileView } from './components/ProfileView';
 import { AddView } from './components/AddView';
 import { OnboardingView } from './components/OnboardingView';
+import OnboardingShotAnalysisView from './components/OnboardingShotAnalysisView';
 import { TrendingCarousel } from './components/TrendingCarousel';
 import { Session, ViewType } from './types';
 import { ChevronDown } from 'lucide-react';
@@ -172,6 +173,13 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'onboarding':
         return <OnboardingView onNavigate={setCurrentView} />;
+      case 'onboarding-shot-analysis':
+        return (
+          <OnboardingShotAnalysisView
+            onBack={() => setCurrentView('onboarding')}
+            onDone={() => setCurrentView('home')}
+          />
+        );
       case 'add':
         return <AddView onNavigate={setCurrentView} />;
       case 'profile':

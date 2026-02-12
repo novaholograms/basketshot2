@@ -107,7 +107,6 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
       };
 
       const res = await updateProfile({
-        onboarding_completed: true,
         onboarding_data,
         full_name: fullName.trim() || null,
         height_cm: toNum(height),
@@ -116,7 +115,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
       });
 
       if (res.ok === true) {
-        onNavigate('home');
+        onNavigate('onboarding-shot-analysis');
       } else {
         console.error('[ONBOARDING] updateProfile error:', res.error);
       }

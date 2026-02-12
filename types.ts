@@ -1,4 +1,11 @@
-export type ViewType = 'home' | 'form' | 'workout' | 'profile' | 'add' | 'onboarding';
+export type ViewType =
+  | 'home'
+  | 'form'
+  | 'workout'
+  | 'profile'
+  | 'add'
+  | 'onboarding'
+  | 'onboarding-shot-analysis';
 
 export interface Session {
   id: string;
