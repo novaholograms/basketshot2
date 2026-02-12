@@ -60,7 +60,7 @@ export const TrendingCarousel: React.FC<TrendingCarouselProps> = ({ onSelect }) 
       <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="text-lg font-bold">Trending Drills</h3>
         <span className="text-xs text-muted font-semibold cursor-pointer hover:text-white transition-colors">
-            Swipe
+            
         </span>
       </div>
 
