@@ -144,7 +144,7 @@ export default function PaywallModal({
           <div className="absolute inset-0 flex items-center justify-center px-6">
             <div className="text-center">
               <h2 className="text-4xl font-black text-white leading-tight mb-1">
-                Go Pro with
+                Unleash Your Potential with
               </h2>
               <h2 className="text-4xl font-black leading-tight">
                 <span className="text-[#f98006]">BasketShot AI</span>
