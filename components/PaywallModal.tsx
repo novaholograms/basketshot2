@@ -26,6 +26,8 @@ export default function PaywallModal({
     loading,
   } = useRevenueCat();
 
+  const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED === "true";
+
   const [selectedPlan, setSelectedPlan] = useState<PlanId>("annual");
   const [error, setError] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -265,11 +267,20 @@ export default function PaywallModal({
           {/* CTA button */}
           <button
             type="button"
-            onClick={handlePurchase}
-            disabled={isPurchasing || !selectedPkg}
+            onClick={() => {
+              if (!paymentsEnabled) {
+                // Modo test: permite seguir el flujo sin comprar
+                onRequestClose();
+                return;
+              }
+              handlePurchase();
+            }}
+            disabled={paymentsEnabled ? (isPurchasing || !selectedPkg) : false}
             className="w-full rounded-full bg-[#f98006] hover:bg-[#f98006]/90 text-black py-4 text-lg font-extrabold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(249,128,6,0.3)] mb-4"
           >
-            {isPurchasing ? (
+            {!paymentsEnabled ? (
+              "Continue (Test Mode)"
+            ) : isPurchasing ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 size={20} className="animate-spin" />
                 Processing...
@@ -278,6 +289,13 @@ export default function PaywallModal({
               "Unlock Pro Access"
             )}
           </button>
+
+          {/* Test mode indicator */}
+          {!paymentsEnabled && (
+            <p className="mb-4 text-center text-[11px] font-semibold text-white/40">
+              Test mode: payments disabled.
+            </p>
+          )}
 
           {/* Footer links */}
           <div className="flex items-center justify-center gap-6 text-sm">
