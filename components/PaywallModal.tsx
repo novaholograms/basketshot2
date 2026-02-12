@@ -147,7 +147,7 @@ export default function PaywallModal({
                 Unleash Your Potential with
               </h2>
               <h2 className="text-4xl font-black leading-tight">
-                <span className="text-[#f98006]">BasketShot AI</span>
+                <span className="text-[#f98006]">BasketShot Elite</span>
               </h2>
             </div>
           </div>
