@@ -143,7 +143,7 @@ export default function PaywallModal({
           {/* Title overlay */}
           <div className="absolute inset-0 flex items-center justify-center px-6">
             <div className="text-center">
-              <h2 className="text-4xl font-black text-white leading-tight mb-1">
+              <h2 className="text-2xl font-black text-white leading-tight mb-1">
                 Unleash Your Potential with
               </h2>
               <h2 className="text-4xl font-black leading-tight">
