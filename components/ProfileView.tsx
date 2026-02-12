@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles } from 'lucide-react';
+import { useRevenueCat } from '../contexts/RevenueCatContext';
+import { RevenueCatUI } from '@revenuecat/purchases-capacitor-ui';
+import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles, CreditCard } from 'lucide-react';
 import { ViewType } from '../types';
 
 interface ProfileViewProps {
@@ -24,6 +26,7 @@ const FAVORITE_WORKOUTS = [
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const { user, profile, signOut, updateProfile } = useAuth();
+  const { isPremium, customerInfo } = useRevenueCat();
   const currentName = useMemo(() => (profile?.full_name ?? '').trim(), [profile?.full_name]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -53,6 +56,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
       setNameDraft('');
     } finally {
       setIsSavingName(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await RevenueCatUI.presentCustomerCenter();
+    } catch (err: any) {
+      console.error('Failed to open Customer Center:', err);
     }
   };
 
@@ -124,7 +135,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
 
             <div className="flex gap-2">
                 <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                    {profile?.is_premium ? 'Premium' : 'Free'}
+                    {isPremium ? 'BasketShot Pro' : 'Free'}
                 </span>
             </div>
 
@@ -194,6 +205,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
             ))}
         </div>
       </section>
+
+      {/* Subscription Management */}
+      {isPremium && (
+        <section className="mb-8">
+          <h4 className="text-lg font-bold mb-4 px-1 flex items-center gap-2">
+            <CreditCard size={18} className="text-primary" />
+            Subscription
+          </h4>
+          <div className="bg-surface rounded-3xl overflow-hidden border border-white/5">
+            <button
+              onClick={handleManageSubscription}
+              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <span className="font-bold text-sm block">Manage Subscription</span>
+                  <span className="text-xs text-muted font-medium">View plans, billing & more</span>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-muted" />
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Settings & Support */}
       <section className="mb-8">

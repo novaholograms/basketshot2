@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import { useRevenueCat } from './contexts/RevenueCatContext';
 import { AuthView } from './components/AuthView';
 import { PaywallView } from './components/PaywallView';
 import { Header } from './components/Header';
@@ -79,6 +80,7 @@ const INITIAL_SESSIONS: Session[] = [
 
 const App: React.FC = () => {
   const { session, profile, loading } = useAuth();
+  const { isPremium, loading: revenueCatLoading } = useRevenueCat();
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
@@ -121,12 +123,13 @@ const App: React.FC = () => {
     hasSession: !!session,
     hasProfile: !!profile,
     onboarding_completed: profile?.onboarding_completed,
-    is_premium: profile?.is_premium,
+    isPremium,
+    revenueCatLoading,
     currentView,
     ts: Date.now(),
   });
 
-  if (loading) {
+  if (loading || revenueCatLoading) {
     return (
       <div className="min-h-screen bg-background text-white max-w-md mx-auto flex items-center justify-center">
         <div className="text-sm text-muted font-bold">Loading...</div>
@@ -146,7 +149,7 @@ const App: React.FC = () => {
   if (!profile.onboarding_completed && currentView !== 'onboarding-shot-analysis') {
     return <OnboardingView onNavigate={setCurrentView} />;
   }
-  if (!profile.is_premium) return <PaywallView />;
+  if (!isPremium) return <PaywallView />;
 
   const handleWorkoutComplete = (data: { title: string; shotsMade?: number; shotsAttempted?: number; duration: number }) => {
     let accuracy = 100;

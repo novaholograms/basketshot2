@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { RevenueCatProvider } from './contexts/RevenueCatContext';
 
 // DEBUG: global crash capture
 window.addEventListener("error", (e) => {
@@ -44,7 +45,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <RevenueCatProvider>
+        <App />
+      </RevenueCatProvider>
     </AuthProvider>
   </React.StrictMode>
 );
