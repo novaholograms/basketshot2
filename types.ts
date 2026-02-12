@@ -2,6 +2,7 @@ export type ViewType =
   | 'home'
   | 'form'
   | 'workout'
+  | 'my-workouts'
   | 'profile'
   | 'add'
   | 'onboarding'

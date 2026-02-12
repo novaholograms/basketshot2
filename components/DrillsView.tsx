@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Play, ChevronRight, Loader2, Bot, Timer, Zap, X, ArrowLeft, Clock, Activity, CheckCircle2, Pause, SkipBack, SkipForward, Info, MoreHorizontal, Edit2, Trash2, Plus, Save, AlertTriangle, Filter, Trophy, Target, BarChart3 } from 'lucide-react';
+import { Sparkles, Play, ChevronRight, Loader2, Bot, Timer, Zap, X, ArrowLeft, Clock, Activity, CheckCircle2, Pause, SkipBack, SkipForward, Info, MoreHorizontal, Edit2, Trash2, Plus, Save, AlertTriangle, Filter, Trophy, Target, BarChart3, Bookmark } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { useAuth } from "../contexts/AuthContext";
+import { getSavedWorkoutIds, saveWorkout, unsaveWorkout } from "../services/savedWorkoutsService";
 
 export const PRESET_WORKOUTS = [
   {
@@ -71,9 +73,10 @@ interface WorkoutDetail {
 interface DrillsViewProps {
   onWorkoutComplete?: (data: { title: string; shotsMade?: number; shotsAttempted?: number; duration: number }) => void;
   initialWorkout?: any | null;
+  onOpenMyWorkouts?: () => void;
 }
 
-export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initialWorkout }) => {
+export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initialWorkout, onOpenMyWorkouts }) => {
   // Navigation States
   const [showGenerator, setShowGenerator] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutDetail | null>(null);
@@ -102,10 +105,16 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
   // AI Generator States
   const [prompt, setPrompt] = useState('');
-  const [duration, setDuration] = useState(30); 
+  const [duration, setDuration] = useState(30);
   const [intensity, setIntensity] = useState('Med');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedWorkout, setGeneratedWorkout] = useState<string | null>(null);
+
+  // Saved Workouts States
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [savedSet, setSavedSet] = useState<Set<string>>(new Set());
+  const [savingSaved, setSavingSaved] = useState(false);
 
   // Chart State
   const [chartVisible, setChartVisible] = useState(false);
@@ -276,7 +285,24 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       handlePresetClick(initialWorkout);
     }
   }, [initialWorkout]);
-  
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!userId) {
+        setSavedSet(new Set());
+        return;
+      }
+      const ids = await getSavedWorkoutIds(userId);
+      if (!mounted) return;
+      setSavedSet(new Set(ids));
+    };
+    void load();
+    return () => {
+      mounted = false;
+    };
+  }, [userId]);
+
   // Effect for Chart Animation
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -363,6 +389,26 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
     setNewDrillName('');
     setNewDrillDuration('5');
+  };
+
+  const toggleSaveActiveWorkout = async () => {
+    if (!userId || !activeWorkout?.title) return;
+    const workoutId = activeWorkout.title;
+    const isSaved = savedSet.has(workoutId);
+
+    setSavingSaved(true);
+    const ok = isSaved
+      ? await unsaveWorkout(userId, workoutId)
+      : await saveWorkout(userId, workoutId);
+    setSavingSaved(false);
+    if (!ok) return;
+
+    setSavedSet((prev) => {
+      const next = new Set(prev);
+      if (isSaved) next.delete(workoutId);
+      else next.add(workoutId);
+      return next;
+    });
   };
 
   // --- Drill Session Logic ---
@@ -611,9 +657,20 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
   const renderWorkoutList = () => (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-36">
-      <div className="mt-2 px-1">
-         <h3 className="text-2xl font-extrabold tracking-tight mb-2">Workouts</h3>
-         <p className="text-muted text-sm font-medium">What do you want to work on today?</p>
+      <div className="mt-2 px-1 flex items-start justify-between gap-3">
+         <div>
+           <h3 className="text-2xl font-extrabold tracking-tight mb-2">Workouts</h3>
+           <p className="text-muted text-sm font-medium">What do you want to work on today?</p>
+         </div>
+         <button
+           type="button"
+           onClick={onOpenMyWorkouts}
+           disabled={!onOpenMyWorkouts}
+           className="rounded-xl p-2 hover:bg-white/5 transition-colors disabled:opacity-60"
+           aria-label="My Workouts"
+         >
+           <Bookmark size={18} />
+         </button>
       </div>
 
       <section>
@@ -874,12 +931,31 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                     <ArrowLeft size={20} />
                 </button>
 
-                 <button 
+                <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void toggleSaveActiveWorkout()}
+                    disabled={!userId || savingSaved}
+                    className="w-10 h-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors bg-black/40 text-white hover:bg-black/60 disabled:opacity-60"
+                    aria-label="Save workout"
+                  >
+                    <Bookmark
+                      size={18}
+                      fill={activeWorkout?.title && savedSet.has(activeWorkout.title) ? "currentColor" : "none"}
+                    />
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setIsEditing(!isEditing)}
-                    className={`absolute top-4 right-6 w-10 h-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center z-20 transition-colors ${isEditing ? 'bg-primary text-black' : 'bg-black/40 text-white hover:bg-black/60'}`}
-                >
+                    className={`w-10 h-10 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors ${
+                      isEditing ? "bg-primary text-black" : "bg-black/40 text-white hover:bg-black/60"
+                    }`}
+                    aria-label="Edit workout"
+                  >
                     {isEditing ? <Save size={18} /> : <Edit2 size={18} />}
-                </button>
+                  </button>
+                </div>
 
                 <div className={`${isCustom ? 'px-6' : 'absolute bottom-0 left-0 p-6 w-full'}`}>
                     <div className="flex gap-2 mb-3">

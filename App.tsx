@@ -8,6 +8,7 @@ import { ActionBanner } from './components/ActionBanner';
 import { SessionList } from './components/SessionList';
 import { BottomNav } from './components/BottomNav';
 import { DrillsView } from './components/DrillsView';
+import { MyWorkoutsView } from './components/MyWorkoutsView';
 import { FormView } from './components/FormView';
 import { ProfileView } from './components/ProfileView';
 import { AddView } from './components/AddView';
@@ -199,7 +200,23 @@ const App: React.FC = () => {
       case 'profile':
         return <ProfileView onNavigate={setCurrentView} />;
       case 'workout':
-        return <DrillsView onWorkoutComplete={handleWorkoutComplete} initialWorkout={selectedWorkout} />;
+        return (
+          <DrillsView
+            onWorkoutComplete={handleWorkoutComplete}
+            initialWorkout={selectedWorkout}
+            onOpenMyWorkouts={() => setCurrentView('my-workouts')}
+          />
+        );
+      case 'my-workouts':
+        return (
+          <MyWorkoutsView
+            onBack={() => setCurrentView('workout')}
+            onSelectWorkout={(workout) => {
+              setSelectedWorkout(workout);
+              setCurrentView('workout');
+            }}
+          />
+        );
       case 'form':
         return <FormView />;
       case 'home':
