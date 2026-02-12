@@ -22,8 +22,10 @@ import {
 import type { AnalysisResult } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
 import { useAuth } from '../contexts/AuthContext';
+import { useRevenueCat } from '../contexts/RevenueCatContext';
 import { saveShotAnalysis } from '../services/analysisStorage';
 import { addToCache } from '../utils/analysisCache';
+import PaywallModal from './PaywallModal';
 
 const SHOT_TYPES = [
   { id: '3pt', title: '3-Pointer', icon: CircleDashed, desc: 'Deep range mechanics' },
@@ -55,6 +57,7 @@ const isNative = Capacitor.isNativePlatform();
 
 export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
   const { user, updateProfile } = useAuth();
+  const { isPremium } = useRevenueCat();
   const userId = user?.id ?? null;
 
   const [step, setStep] = useState<Step>('selection');
@@ -65,6 +68,8 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
   const [displayScore, setDisplayScore] = useState(0);
   const [showTips, setShowTips] = useState(false);
   const [showResultsDetails, setShowResultsDetails] = useState(false);
+  const [showGate, setShowGate] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -103,6 +108,30 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
       return () => clearInterval(timer);
     }
   }, [step, analysisResult]);
+
+  // Activate gate 1s after arriving at results (if not premium)
+  useEffect(() => {
+    if (step !== 'results') {
+      setShowGate(false);
+      setShowPaywall(false);
+      return;
+    }
+    if (isPremium) {
+      setShowGate(false);
+      setShowPaywall(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowGate(true), 1000);
+    return () => window.clearTimeout(timer);
+  }, [step, isPremium]);
+
+  // Auto-unlock when premium status changes
+  useEffect(() => {
+    if (isPremium) {
+      setShowGate(false);
+      setShowPaywall(false);
+    }
+  }, [isPremium]);
 
   const handleCardClick = (shot: typeof SHOT_TYPES[0]) => {
     setSelectedShot(shot);
@@ -229,6 +258,15 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
     } else {
       onBack();
     }
+  };
+
+  const handleGateBack = () => {
+    // Lose the analysis and go back to preview to retry
+    setAnalysisResult(null);
+    setDisplayScore(0);
+    setShowGate(false);
+    setShowPaywall(false);
+    setStep('preview');
   };
 
   const renderSelection = () => (
@@ -419,7 +457,9 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
     }
 
     return (
-      <div className="h-full pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in slide-in-from-bottom-8 duration-700 overflow-y-auto flex flex-col">
+      <div className="relative h-full pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in slide-in-from-bottom-8 duration-700 overflow-hidden flex flex-col">
+        {/* Results content with blur effect when gate is active */}
+        <div className={`overflow-y-auto flex flex-col ${showGate && !isPremium ? 'filter blur-[10px] opacity-90 pointer-events-none select-none' : ''}`}>
         <div className="flex flex-col items-center justify-center mb-6 mt-2">
           <div className="relative w-40 h-40 mb-6">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
@@ -583,6 +623,56 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
             Done
           </button>
         </div>
+        </div>
+
+        {/* Gate overlay */}
+        {showGate && !isPremium && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+            {/* Back button - allows losing the analysis */}
+            <button
+              type="button"
+              onClick={handleGateBack}
+              className="absolute z-[60] top-[calc(env(safe-area-inset-top)+12px)] left-3 p-2 bg-white/10 rounded-full hover:bg-white/15 active:scale-95 transition"
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+
+            {/* Gate content */}
+            <div className="relative z-[60] w-[min(92%,360px)] rounded-3xl border border-white/10 bg-[#0b0b0d] p-6 shadow-2xl animate-in zoom-in-95 fade-in duration-300">
+              <p className="text-center text-xl font-extrabold text-white mb-2">
+                Unlock results for <span className="text-[#f98006]">FREE</span>
+              </p>
+              <p className="text-center text-sm font-semibold text-white/60 mb-6">
+                See your score, strengths and improvements.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setShowPaywall(true)}
+                className="w-full rounded-2xl bg-[#f98006] hover:bg-[#f98006]/90 py-4 text-center text-base font-extrabold text-black transition-all shadow-[0_0_20px_rgba(249,128,6,0.4)]"
+              >
+                Try for 0.00$
+              </button>
+
+              <p className="mt-4 text-center text-[11px] font-semibold text-white/40">
+                You can cancel anytime.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Paywall modal */}
+        <PaywallModal
+          isOpen={showPaywall && !isPremium}
+          onRequestClose={() => {
+            if (isPremium) setShowPaywall(false);
+          }}
+          termsUrl="https://basketshot.ai/terms"
+          privacyUrl="https://basketshot.ai/privacy"
+        />
       </div>
     );
   };
