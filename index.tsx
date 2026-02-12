@@ -22,6 +22,19 @@ window.addEventListener("unhandledrejection", (e) => {
   });
 });
 
+// DEBUG: detect real page unload/reload
+window.addEventListener("beforeunload", () => {
+  console.warn("[GLOBAL] beforeunload (page is reloading/unloading)", { ts: Date.now() });
+});
+
+// DEBUG: navigation entry (reload/back-forward)
+try {
+  const nav = performance.getEntriesByType("navigation")?.[0];
+  console.log("[GLOBAL] navigation", nav);
+} catch (e) {
+  console.log("[GLOBAL] navigation unavailable");
+}
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
@@ -35,9 +48,3 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
-
-window.addEventListener("beforeunload", () => {
-  console.warn("[GLOBAL] beforeunload (page is reloading/unloading)", { ts: Date.now() });
-});
-
-console.log("[GLOBAL] navigation", performance.getEntriesByType("navigation")[0]);
