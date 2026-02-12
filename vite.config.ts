@@ -15,6 +15,13 @@ export default defineConfig(({ mode }) => {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
+      optimizeDeps: {
+        include: [
+          '@revenuecat/purchases-capacitor-ui',
+          '@revenuecat/purchases-capacitor',
+          '@revenuecat/purchases-typescript-internal-esm'
+        ],
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
