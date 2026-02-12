@@ -35,3 +35,9 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
+
+window.addEventListener("beforeunload", () => {
+  console.warn("[GLOBAL] beforeunload (page is reloading/unloading)", { ts: Date.now() });
+});
+
+console.log("[GLOBAL] navigation", performance.getEntriesByType("navigation")[0]);
