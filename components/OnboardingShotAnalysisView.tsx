@@ -231,7 +231,7 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
   };
 
   const renderSelection = () => (
-    <div className="h-full flex flex-col pt-6 pb-28 animate-in zoom-in-95 fade-in duration-300">
+    <div className="h-full flex flex-col pt-3 pb-28 animate-in zoom-in-95 fade-in duration-300">
       <div className="mb-6 px-4">
         <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
           <ArrowLeft size={20} />
