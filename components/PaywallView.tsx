@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "../contexts/AuthContext";
 import { useRevenueCat } from "../contexts/RevenueCatContext";
 import { RevenueCatUI } from "@revenuecat/purchases-capacitor-ui";
 import { Loader2, X } from "lucide-react";
 
 export function PaywallView() {
+  const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED === "true";
   const { signOut } = useAuth();
   const { isPremium, refreshCustomerInfo, restorePurchases, error: rcError } = useRevenueCat();
   const [showingPaywall, setShowingPaywall] = useState(false);
@@ -22,11 +24,16 @@ export function PaywallView() {
       setShowingPaywall(true);
       setError(null);
 
-      await RevenueCatUI.presentPaywall();
+      await Promise.race([
+        RevenueCatUI.presentPaywall(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Paywall timeout")), 8000)
+        ),
+      ]);
 
       await refreshCustomerInfo();
     } catch (err: any) {
-      console.error("Paywall presentation error:", err);
+      console.error("[PAYWALL-VIEW] presentPaywall failed", err);
       if (err.code !== "USER_CANCELLED") {
         setError(err.message || "Failed to show paywall");
       }
@@ -49,7 +56,10 @@ export function PaywallView() {
   };
 
   useEffect(() => {
-    handleShowPaywall();
+    // Evitar cuelgues en web/dev: solo abrir paywall nativa con pagos reales y en plataforma nativa
+    if (!paymentsEnabled) return;
+    if (!Capacitor.isNativePlatform()) return;
+    void handleShowPaywall();
   }, []);
 
   return (

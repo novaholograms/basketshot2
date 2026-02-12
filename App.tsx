@@ -149,8 +149,10 @@ const App: React.FC = () => {
   if (!profile.onboarding_completed && currentView !== 'onboarding-shot-analysis') {
     return <OnboardingView onNavigate={setCurrentView} />;
   }
-  // La paywall "vieja" solo puede aparecer cuando el usuario ya ha terminado todo el onboarding
-  if (!isPremium && profile.onboarding_completed) return <PaywallView />;
+  // Nunca mostrar paywall si no hay sesión o no hay perfil cargado
+  if (session && profile && profile.onboarding_completed && !isPremium) {
+    return <PaywallView />;
+  }
 
   const handleWorkoutComplete = (data: { title: string; shotsMade?: number; shotsAttempted?: number; duration: number }) => {
     let accuracy = 100;
