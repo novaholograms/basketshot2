@@ -63,6 +63,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       return;
     }
+
+    if (!data) {
+      console.log("[AUTH] profile not found, creating...", { uid });
+
+      const { data: created, error: createError } = await supabase
+        .from("profiles")
+        .insert({
+          id: uid,
+          onboarding_completed: false,
+          is_premium: false,
+        })
+        .select("*")
+        .single();
+
+      if (createError) {
+        console.warn("[AUTH] createProfile error:", createError.message);
+        setProfile(null);
+        return;
+      }
+
+      setProfile(created as ProfileRow);
+      return;
+    }
+
     setProfile(data as ProfileRow);
   };
 

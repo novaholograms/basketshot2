@@ -34,7 +34,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const [isPremium, setIsPremium] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [offerings, setOfferings] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const checkEntitlement = (info: CustomerInfo): boolean => {
@@ -126,9 +126,16 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   };
 
   useEffect(() => {
-    if (user) {
-      initializeRevenueCat();
+    if (!user) {
+      setLoading(false);
+      setIsReady(false);
+      setIsPremium(false);
+      setCustomerInfo(null);
+      setOfferings(null);
+      return;
     }
+
+    void initializeRevenueCat();
   }, [user?.id]);
 
   useEffect(() => {
