@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useRevenueCat } from './contexts/RevenueCatContext';
 import { AuthView } from './components/AuthView';
-import { PaywallView } from './components/PaywallView';
 import { Header } from './components/Header';
 import { StatCard } from './components/StatCard';
 import { ActionBanner } from './components/ActionBanner';
@@ -148,10 +147,6 @@ const App: React.FC = () => {
 
   if (!profile.onboarding_completed && currentView !== 'onboarding-shot-analysis') {
     return <OnboardingView onNavigate={setCurrentView} />;
-  }
-  // Nunca mostrar paywall si no hay sesión o no hay perfil cargado
-  if (session && profile && profile.onboarding_completed && !isPremium) {
-    return <PaywallView />;
   }
 
   const handleWorkoutComplete = (data: { title: string; shotsMade?: number; shotsAttempted?: number; duration: number }) => {
