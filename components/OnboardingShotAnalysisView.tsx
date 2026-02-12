@@ -152,6 +152,9 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
     try {
       console.log("[ONBOARDING] analyzeVideo begin");
       const result = await analyzeVideo(videoUrl, () => {});
+      // DEBUG: memory snapshot (Chrome only)
+// @ts-ignore
+if (performance?.memory) console.log("[MEM]", performance.memory);
       console.log("[ONBOARDING] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });
       setAnalysisResult(result);
 
