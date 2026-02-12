@@ -25,6 +25,10 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          '@revenuecat/purchases-capacitor-ui': path.resolve(
+            __dirname,
+            'node_modules/@revenuecat/purchases-capacitor-ui/dist/esm/index.js'
+          ),
         }
       }
     };
