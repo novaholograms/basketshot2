@@ -64,6 +64,7 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [displayScore, setDisplayScore] = useState(0);
   const [showTips, setShowTips] = useState(false);
+  const [showResultsDetails, setShowResultsDetails] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -231,19 +232,13 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
   };
 
   const renderSelection = () => (
-    <div className="h-full flex flex-col pt-6 pb-12 animate-in zoom-in-95 fade-in duration-300">
-      <div className="mb-6 px-4">
-        <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
-          <ArrowLeft size={20} />
-        </button>
-      </div>
-
-      <div className="text-center mb-8 px-4">
+    <div className="h-full flex flex-col pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in zoom-in-95 fade-in duration-300 overflow-hidden">
+      <div className="text-center mb-8">
         <h2 className="text-3xl font-extrabold tracking-tight mb-2">Record Your First Shot</h2>
         <p className="text-muted text-sm font-medium">Choose your shot type to begin</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 px-4">
+      <div className="grid grid-cols-2 gap-4">
         {SHOT_TYPES.map((shot) => {
           const Icon = shot.icon;
           return (
@@ -265,13 +260,7 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
   );
 
   const renderSource = () => (
-    <div className="h-full flex flex-col justify-center pb-28 animate-in slide-in-from-right duration-300 px-4">
-      <div className="mb-6">
-        <button onClick={handleBackClick} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
-          <ArrowLeft size={20} />
-        </button>
-      </div>
-
+    <div className="h-full flex flex-col justify-center pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in slide-in-from-right duration-300 overflow-hidden">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-extrabold tracking-tight mb-3">{selectedShot?.title}</h2>
         <p className="text-muted text-sm font-medium">Choose your video source</p>
@@ -325,13 +314,7 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
   );
 
   const renderPreview = () => (
-    <div className="h-full flex flex-col justify-center pb-28 animate-in slide-in-from-right duration-300 px-4">
-      <div className="mb-6">
-        <button onClick={handleBackClick} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
-          <ArrowLeft size={20} />
-        </button>
-      </div>
-
+    <div className="h-full flex flex-col justify-center pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in slide-in-from-right duration-300 overflow-hidden">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-extrabold tracking-tight mb-2">Preview Your Shot</h2>
         <p className="text-muted text-sm font-medium">Ready to analyze?</p>
@@ -367,7 +350,7 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
   );
 
   const renderAnalyzing = () => (
-    <div className="h-full flex flex-col justify-center animate-in fade-in duration-700 relative pb-20 px-4">
+    <div className="h-full flex flex-col justify-center pt-[calc(env(safe-area-inset-top)+16px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in fade-in duration-700 relative overflow-hidden">
       <div className="relative w-full aspect-[9/16] max-h-[70vh] rounded-3xl overflow-hidden border border-primary/30 shadow-[0_0_30px_rgba(249,128,6,0.1)]">
         {videoUrl && (
           <video
@@ -410,7 +393,7 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
   const renderResults = () => {
     if (analysisResult?.isInvalid) {
       return (
-        <div className="pb-24 animate-in slide-in-from-bottom-8 duration-700 px-4">
+        <div className="h-full pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in slide-in-from-bottom-8 duration-700 overflow-hidden flex flex-col justify-center">
           <div className="flex flex-col items-center justify-center py-12 mt-6">
             <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
               <AlertCircle size={48} className="text-red-500" />
@@ -436,8 +419,8 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
     }
 
     return (
-      <div className="pb-24 animate-in slide-in-from-bottom-8 duration-700 px-4">
-        <div className="flex flex-col items-center justify-center mb-8 mt-6">
+      <div className="h-full pt-[calc(env(safe-area-inset-top)+56px)] pb-[calc(env(safe-area-inset-bottom)+16px)] px-4 animate-in slide-in-from-bottom-8 duration-700 overflow-y-auto flex flex-col">
+        <div className="flex flex-col items-center justify-center mb-6 mt-2">
           <div className="relative w-40 h-40 mb-6">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
               <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/10" />
@@ -502,14 +485,14 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
           </div>
         )}
 
-        <div className={`space-y-6 transition-all duration-1000 delay-500 ${displayScore > 20 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`space-y-4 transition-all duration-1000 delay-500 ${displayScore > 20 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           {analysisResult?.strengths && analysisResult.strengths.length > 0 && (
-            <div className="bg-surface rounded-3xl p-6 border border-white/5">
-              <h4 className="font-bold text-sm text-green-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <div className="bg-surface rounded-3xl p-5 border border-white/5">
+              <h4 className="font-bold text-sm text-green-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <CheckCircle2 size={16} /> Strengths
               </h4>
-              <ul className="space-y-3">
-                {analysisResult.strengths.map((strength, idx) => (
+              <ul className="space-y-2">
+                {analysisResult.strengths.slice(0, 2).map((strength, idx) => (
                   <li key={idx} className="flex gap-3 text-sm font-medium text-white/90">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2"></span>
                     {strength}
@@ -520,13 +503,13 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
           )}
 
           {analysisResult?.improvements && analysisResult.improvements.length > 0 && (
-            <div className="bg-surface rounded-3xl p-6 border border-white/5">
-              <h4 className="font-bold text-sm text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+            <div className="bg-surface rounded-3xl p-5 border border-white/5">
+              <h4 className="font-bold text-sm text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
                 <AlertCircle size={16} /> Areas to Improve
               </h4>
-              <div className="space-y-4">
-                {analysisResult.improvements.map((improvement, idx) => (
-                  <div key={idx} className="bg-black/20 rounded-2xl p-4 border border-white/5">
+              <div className="space-y-3">
+                {analysisResult.improvements.slice(0, 2).map((improvement, idx) => (
+                  <div key={idx} className="bg-black/20 rounded-2xl p-3 border border-white/5">
                     <p className="text-sm font-medium text-white/90 leading-relaxed whitespace-pre-line">
                       {improvement}
                     </p>
@@ -534,6 +517,17 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
                 ))}
               </div>
             </div>
+          )}
+
+          {((analysisResult?.strengths && analysisResult.strengths.length > 2) ||
+            (analysisResult?.improvements && analysisResult.improvements.length > 2)) && (
+            <button
+              type="button"
+              onClick={() => setShowResultsDetails(true)}
+              className="w-full text-sm font-bold text-primary/90 hover:text-primary underline underline-offset-4 transition-colors"
+            >
+              View full breakdown
+            </button>
           )}
 
           {analysisResult?.aiCoachTip && (
@@ -595,7 +589,17 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
 
   return (
     <>
-      <div className="min-h-screen bg-background text-white max-w-md mx-auto">
+      <div className="relative h-[100dvh] bg-background text-white max-w-md mx-auto overflow-hidden">
+        {step !== 'analyzing' && (
+          <button
+            onClick={step === 'selection' ? onBack : handleBackClick}
+            className="absolute z-50 top-[calc(env(safe-area-inset-top)+12px)] left-3 p-2 bg-white/5 rounded-full hover:bg-white/10 active:scale-95 transition"
+            aria-label="Back"
+            type="button"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        )}
         {step === 'selection' && renderSelection()}
         {step === 'source' && renderSource()}
         {step === 'preview' && renderPreview()}
@@ -651,6 +655,66 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
               </div>
             </div>
             <button onClick={() => setShowTips(false)} className="w-full mt-8 bg-surface border border-white/10 hover:bg-white/5 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">Got it</button>
+          </div>
+        </div>
+      )}
+
+      {showResultsDetails && analysisResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowResultsDetails(false)}></div>
+          <div className="relative bg-[#141414] w-full max-w-lg rounded-3xl border border-white/10 p-6 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar animate-in zoom-in-95 fade-in duration-300">
+            <button
+              type="button"
+              onClick={() => setShowResultsDetails(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <h3 className="text-lg font-extrabold mb-6 pr-8">Full Breakdown</h3>
+
+            <div className="space-y-6">
+              {analysisResult.strengths && analysisResult.strengths.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold text-green-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <CheckCircle2 size={16} /> Strengths
+                  </h4>
+                  <ul className="space-y-2">
+                    {analysisResult.strengths.map((strength, idx) => (
+                      <li key={`s-${idx}`} className="flex gap-3 text-sm font-medium text-white/90 leading-relaxed">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0"></span>
+                        <span>{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {analysisResult.improvements && analysisResult.improvements.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <AlertCircle size={16} /> Areas to Improve
+                  </h4>
+                  <div className="space-y-3">
+                    {analysisResult.improvements.map((improvement, idx) => (
+                      <div key={`i-${idx}`} className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                        <p className="text-sm font-medium text-white/90 leading-relaxed whitespace-pre-line">
+                          {improvement}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowResultsDetails(false)}
+              className="w-full mt-6 bg-surface border border-white/10 hover:bg-white/5 text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

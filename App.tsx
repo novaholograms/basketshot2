@@ -254,7 +254,7 @@ const App: React.FC = () => {
     }
   };
 
-  const isFullScreen = currentView === 'onboarding';
+  const isFullScreen = currentView === 'onboarding' || currentView === 'onboarding-shot-analysis';
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-white max-w-md mx-auto shadow-2xl overflow-hidden relative">
