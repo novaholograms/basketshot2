@@ -120,6 +120,9 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   const [chartVisible, setChartVisible] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(5); // Default to Saturday (high score)
   const didAutoLoadDefaultWorkout = useRef(false);
+  const dbgIdRef = useRef<string>(`DrillsView#${Math.random().toString(36).slice(2, 8)}`);
+  const dbg = (...args: any[]) => console.log(`[${dbgIdRef.current}]`, ...args);
+  const dbgWarn = (...args: any[]) => console.warn(`[${dbgIdRef.current}]`, ...args);
 
   // Mock Progress Data
   const WEEKLY_STATS = [
@@ -282,17 +285,32 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
   // Effect to handle deep linking from Home
   useEffect(() => {
+    dbg("effect:initialWorkout changed", {
+      hasInitialWorkout: !!initialWorkout,
+      initialWorkoutTitle: (initialWorkout as any)?.title,
+    });
     if (initialWorkout) {
+      dbg("initialWorkout present -> handlePresetClick(initialWorkout)");
       handlePresetClick(initialWorkout);
     }
   }, [initialWorkout]);
 
   useEffect(() => {
+    dbg("autoload check", {
+      didAutoLoad: didAutoLoadDefaultWorkout.current,
+      hasInitialWorkout: !!initialWorkout,
+      hasActiveWorkout: !!activeWorkout,
+      presetCount: PRESET_WORKOUTS?.length,
+      showAllWorkouts,
+    });
     if (didAutoLoadDefaultWorkout.current) return;
     if (initialWorkout) return;
     if (activeWorkout) return;
     if (!PRESET_WORKOUTS || PRESET_WORKOUTS.length === 0) return;
     didAutoLoadDefaultWorkout.current = true;
+    dbg("AUTOLOAD -> handlePresetClick(PRESET_WORKOUTS[0])", {
+      title: PRESET_WORKOUTS[0]?.title,
+    });
     handlePresetClick(PRESET_WORKOUTS[0]);
   }, [initialWorkout, activeWorkout]);
 
@@ -424,12 +442,31 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   // --- Drill Session Logic ---
 
   const startDrill = (index: number) => {
-    if (!activeWorkout) return;
+    dbg("startDrill CALLED", {
+      index,
+      hasActiveWorkout: !!activeWorkout,
+      activeWorkoutTitle: activeWorkout?.title,
+      stepsLen: activeWorkout?.steps?.length,
+      stepDurationMin: activeWorkout?.steps?.[index]?.duration,
+      isTimerRunning,
+      activeDrillIndex,
+    });
+    if (!activeWorkout) {
+      dbgWarn("startDrill ABORT: activeWorkout is null");
+      return;
+    }
+    if (!activeWorkout.steps || !activeWorkout.steps[index]) {
+      dbgWarn("startDrill ABORT: step missing", { stepsLen: activeWorkout?.steps?.length });
+      return;
+    }
     setActiveDrillIndex(index);
-    // Convert minutes to seconds for the timer
     setTimeLeft(activeWorkout.steps[index].duration * 60);
     setIsTimerRunning(true);
     setShowDrillInfo(false);
+    dbg("startDrill STATE SET", {
+      nextActiveDrillIndex: index,
+      nextTimeLeft: activeWorkout.steps[index].duration * 60,
+    });
   };
 
   const handleNextDrill = () => {
@@ -1122,8 +1159,14 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                                 Finish & Save
                             </button>
                         ) : (
-                            <button 
-                                onClick={() => startDrill(0)}
+                            <button
+                                onClick={() => {
+                                  console.log("[StartWorkoutButton] CLICK", {
+                                    hasActiveWorkout: !!activeWorkout,
+                                    stepsLen: activeWorkout?.steps?.length,
+                                  });
+                                  startDrill(0);
+                                }}
                                 className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                             >
                                 <Play size={20} fill="currentColor" />
@@ -1222,7 +1265,19 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
         </div>
       )}
 
-      {activeWorkout ? renderWorkoutDetail() : showAllWorkouts ? renderAllWorkouts() : renderWorkoutList()}
+      {(() => {
+        dbg("render branch", {
+          hasActiveWorkout: !!activeWorkout,
+          showAllWorkouts,
+          activeWorkoutTitle: activeWorkout?.title,
+          stepsLen: activeWorkout?.steps?.length,
+        });
+        return activeWorkout
+          ? renderWorkoutDetail()
+          : showAllWorkouts
+            ? renderAllWorkouts()
+            : renderWorkoutList();
+      })()}
     </>
   );
 };
