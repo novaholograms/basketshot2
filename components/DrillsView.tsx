@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Play, ChevronRight, Loader2, Bot, Timer, Zap, X, ArrowLeft, Clock, Activity, CheckCircle2, Pause, SkipBack, SkipForward, Info, MoreHorizontal, Edit2, Trash2, Plus, Save, AlertTriangle, Filter, Trophy, Target, BarChart3, Bookmark } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import { useAuth } from "../contexts/AuthContext";
+import { generateWorkoutWithAI } from "../services/geminiExplainer";
 import { getSavedWorkoutIds, saveWorkout, unsaveWorkout } from "../services/savedWorkoutsService";
 
 export const PRESET_WORKOUTS = [
@@ -493,19 +493,12 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     setGeneratedWorkout(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Create a ${intensity} intensity basketball workout plan for exactly ${duration} minutes focusing on: ${prompt}. 
-        Format as a structured markdown list:
-        - **Objective**
-        - **Warm-up** (Time)
-        - **Workout Phase 1** (Time & Details)
-        - **Workout Phase 2** (Time & Details)
-        - **Cool Down**
-        Keep it concise and actionable.`,
-      });
-      setGeneratedWorkout(response.text);
+      const text = await generateWorkoutWithAI({ prompt, duration, intensity }, 8000);
+      if (text) {
+        setGeneratedWorkout(text);
+      } else {
+        console.error("Error generating workout: no response from AI");
+      }
     } catch (error) {
       console.error("Error generating workout", error);
     } finally {

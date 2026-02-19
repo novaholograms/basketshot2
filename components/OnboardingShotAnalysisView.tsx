@@ -25,6 +25,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRevenueCat } from '../contexts/RevenueCatContext';
 import { saveShotAnalysis } from '../services/analysisStorage';
 import { addToCache } from '../utils/analysisCache';
+import { fetchGeminiExplanation } from '../services/geminiExplainer';
 import PaywallModal from './PaywallModal';
 
 const SHOT_TYPES = [
@@ -70,6 +71,8 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
   const [showResultsDetails, setShowResultsDetails] = useState(false);
   const [showGate, setShowGate] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [geminiLoading, setGeminiLoading] = useState(false);
+  const [geminiEnhanced, setGeminiEnhanced] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -187,6 +190,32 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
       const result = await analyzeVideo(videoUrl, () => {});
       console.log("[ONBOARDING] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });
       setAnalysisResult(result);
+      setGeminiEnhanced(false);
+
+      (async () => {
+        try {
+          setGeminiLoading(true);
+          const enhanced = await fetchGeminiExplanation({
+            shotType: selectedShot?.id ?? 'unknown',
+            score: result.score,
+            metrics: result.metrics as unknown as Record<string, number>,
+            context: { framesProcessed: result.processedFrames },
+          }, 5000);
+          if (!enhanced) return;
+          setAnalysisResult((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              strengths: enhanced.strengths?.length ? enhanced.strengths : prev.strengths,
+              improvements: enhanced.improvements?.length ? enhanced.improvements : prev.improvements,
+              aiCoachTip: enhanced.aiCoachTip ?? prev.aiCoachTip,
+            };
+          });
+          setGeminiEnhanced(true);
+        } finally {
+          setGeminiLoading(false);
+        }
+      })();
 
       if (userId && !result.isInvalid) {
         try {
@@ -768,6 +797,15 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
             </button>
 
             <h3 className="text-lg font-extrabold mb-6 pr-8">Full Breakdown</h3>
+
+            {geminiLoading && (
+              <div className="text-xs text-white/40 text-center mb-4">Enhancing analysis with AI...</div>
+            )}
+            {geminiEnhanced && !geminiLoading && (
+              <div className="text-xs text-white/40 text-center mb-4 flex items-center justify-center gap-1">
+                <Sparkles size={11} /> AI-enhanced analysis
+              </div>
+            )}
 
             <div className="space-y-6">
               {analysisResult.strengths && analysisResult.strengths.length > 0 && (

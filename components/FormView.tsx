@@ -5,6 +5,7 @@ import { analyzeVideo } from '../services/shotAnalyzer';
 import { useAuth } from '../contexts/AuthContext';
 import { saveShotAnalysis, fetchRecentShotAnalyses } from '../services/analysisStorage';
 import { addToCache, getCachedAnalyses, setCachedAnalyses } from '../utils/analysisCache';
+import { fetchGeminiExplanation } from '../services/geminiExplainer';
 
 const SHOT_TYPES = [
   {
@@ -65,6 +66,8 @@ export const FormView: React.FC = () => {
   const [history, setHistory] = useState<ShotAnalysisRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<string>('all');
+  const [geminiLoading, setGeminiLoading] = useState(false);
+  const [geminiEnhanced, setGeminiEnhanced] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +114,32 @@ export const FormView: React.FC = () => {
       console.log("[FORM] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });
 
       setAnalysisResult(result);
+      setGeminiEnhanced(false);
+
+      (async () => {
+        try {
+          setGeminiLoading(true);
+          const enhanced = await fetchGeminiExplanation({
+            shotType: selectedShot?.id ?? 'unknown',
+            score: result.score,
+            metrics: result.metrics as unknown as Record<string, number>,
+            context: { framesProcessed: result.processedFrames },
+          }, 5000);
+          if (!enhanced) return;
+          setAnalysisResult((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              strengths: enhanced.strengths?.length ? enhanced.strengths : prev.strengths,
+              improvements: enhanced.improvements?.length ? enhanced.improvements : prev.improvements,
+              aiCoachTip: enhanced.aiCoachTip ?? prev.aiCoachTip,
+            };
+          });
+          setGeminiEnhanced(true);
+        } finally {
+          setGeminiLoading(false);
+        }
+      })();
 
       if (userId && !result.isInvalid) {
         try {
@@ -630,6 +659,14 @@ export const FormView: React.FC = () => {
 
         {/* Breakdown */}
         <div className={`space-y-6 transition-all duration-1000 delay-500 ${displayScore > 20 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          {geminiLoading && (
+            <div className="text-xs text-white/40 text-center">Enhancing analysis with AI...</div>
+          )}
+          {geminiEnhanced && !geminiLoading && (
+            <div className="text-xs text-white/40 text-center flex items-center justify-center gap-1">
+              <Sparkles size={11} /> AI-enhanced analysis
+            </div>
+          )}
           {/* Strengths */}
           {analysisResult?.strengths && analysisResult.strengths.length > 0 && (
             <div className="bg-surface rounded-3xl p-6 border border-white/5">
