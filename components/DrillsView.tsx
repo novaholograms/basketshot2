@@ -1183,7 +1183,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
             </div>
 
             {/* FIXED ACTION BUTTON */}
-            <div className="fixed bottom-[90px] left-0 right-0 px-6 pt-6 pb-2 bg-gradient-to-t from-background via-background to-transparent z-30 max-w-md mx-auto pointer-events-none">
+            <div className="fixed bottom-[160px] left-0 right-0 px-6 pt-6 pb-2 bg-gradient-to-t from-background via-background to-transparent z-30 max-w-md mx-auto pointer-events-none">
                 <div className="pointer-events-auto">
                     {isEditing ? (
                         <button 
