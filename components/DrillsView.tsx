@@ -119,6 +119,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   // Chart State
   const [chartVisible, setChartVisible] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(5); // Default to Saturday (high score)
+  const didAutoLoadDefaultWorkout = useRef(false);
 
   // Mock Progress Data
   const WEEKLY_STATS = [
@@ -285,6 +286,15 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       handlePresetClick(initialWorkout);
     }
   }, [initialWorkout]);
+
+  useEffect(() => {
+    if (didAutoLoadDefaultWorkout.current) return;
+    if (initialWorkout) return;
+    if (activeWorkout) return;
+    if (!PRESET_WORKOUTS || PRESET_WORKOUTS.length === 0) return;
+    didAutoLoadDefaultWorkout.current = true;
+    handlePresetClick(PRESET_WORKOUTS[0]);
+  }, [initialWorkout, activeWorkout]);
 
   useEffect(() => {
     let mounted = true;
