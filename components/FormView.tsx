@@ -46,6 +46,7 @@ export const FormView: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<ShotAnalysisRow | null>(null);
 
   // Animation State
   const [displayScore, setDisplayScore] = useState(0);
@@ -190,6 +191,29 @@ export const FormView: React.FC = () => {
     }
   };
 
+  const mapRowToAnalysisResult = (row: ShotAnalysisRow): AnalysisResult => {
+    const processedFrames = row.video_meta?.processedFrames ?? 0;
+    const totalFrames = row.video_meta?.totalFrames ?? 0;
+    return {
+      score: row.score ?? 0,
+      metrics: row.metrics,
+      strengths: row.strengths,
+      improvements: row.improvements,
+      aiCoachTip: row.ai_coach_tip ?? undefined,
+      isInvalid: false,
+      messageIfInvalid: undefined,
+      processedFrames,
+      totalFrames,
+    };
+  };
+
+  const openHistoryResult = (row: ShotAnalysisRow) => {
+    setSelectedHistoryItem(row);
+    setAnalysisResult(mapRowToAnalysisResult(row));
+    setDisplayScore(0);
+    setViewState('results');
+  };
+
   const handleBack = () => {
     if (viewState === 'upload') {
       setViewState('selection');
@@ -198,6 +222,7 @@ export const FormView: React.FC = () => {
       setViewState('upload');
       setVideoUrl(null);
     } else if (viewState === 'results') {
+      setSelectedHistoryItem(null);
       setViewState('selection');
       setSelectedShot(null);
       setVideoUrl(null);
@@ -384,9 +409,7 @@ export const FormView: React.FC = () => {
                             <div
                                 key={item.id}
                                 className="bg-surface p-4 rounded-2xl border border-white/5 flex items-center gap-4 hover:border-primary/20 transition-colors cursor-pointer group"
-                                onClick={() => {
-                                    console.log('[HISTORY] clicked analysis:', item.id);
-                                }}
+                                onClick={() => openHistoryResult(item)}
                             >
                                 <div className="flex-1">
                                     <h4 className="font-bold text-sm text-white mb-1">
@@ -744,15 +767,17 @@ export const FormView: React.FC = () => {
 
           <button
             onClick={() => {
+              setSelectedHistoryItem(null);
               setViewState('selection');
               setSelectedShot(null);
               setVideoUrl(null);
               setAnalysisResult(null);
+              setDisplayScore(0);
             }}
             className="w-full bg-primary text-black font-extrabold text-sm py-4 rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles size={18} />
-            Analyze Another Shot
+            {selectedHistoryItem ? 'Back to History' : 'Analyze Another Shot'}
           </button>
         </div>
       </div>
