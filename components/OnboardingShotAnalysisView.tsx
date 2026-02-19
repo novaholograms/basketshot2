@@ -29,10 +29,8 @@ import { fetchGeminiExplanation } from '../services/geminiExplainer';
 import PaywallModal from './PaywallModal';
 
 const SHOT_TYPES = [
-  { id: '3pt', title: '3-Pointer', icon: CircleDashed, desc: 'Deep range mechanics' },
+  { id: '3pt', title: 'Jumpshot', icon: CircleDashed, desc: 'Analyze your jump shot form' },
   { id: 'ft', title: 'Free Throw', icon: ArrowUpCircle, desc: 'Routine & consistency' },
-  { id: 'layup', title: 'Layup', icon: Activity, desc: 'Finishing at the rim' },
-  { id: 'mid', title: 'Mid-Range', icon: Target, desc: 'Pull-up jump shot' },
 ];
 
 const LOADING_STEPS = [

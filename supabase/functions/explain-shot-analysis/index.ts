@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
-type ShotType = "3pt" | "ft" | "layup" | "mid" | string;
+type ShotType = "3pt" | "ft" | string;
 
 type Payload = {
   shotType: ShotType;
