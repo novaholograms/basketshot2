@@ -1025,6 +1025,42 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
             {/* Drill List */}
             <div className="mt-6 space-y-6 px-1">
+                {/* NOW PLAYING player — visible only when a drill is active */}
+                {activeDrillIndex !== null && !isEditing && (
+                    <div className="rounded-3xl border border-primary/30 bg-primary/10 p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="text-[10px] font-bold tracking-widest text-primary/70 uppercase mb-1">Now Playing</div>
+                        <div className="text-lg font-extrabold text-white mb-3 truncate">
+                            {activeWorkout.steps[activeDrillIndex].name}
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="text-4xl font-extrabold tabular-nums text-white">
+                                {formatTime(timeLeft)}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handlePrevDrill}
+                                    disabled={activeDrillIndex === 0}
+                                    className="w-10 h-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white disabled:opacity-30 active:scale-95 transition-all"
+                                >
+                                    <SkipBack size={18} />
+                                </button>
+                                <button
+                                    onClick={toggleTimer}
+                                    className="w-12 h-12 rounded-2xl bg-primary text-black flex items-center justify-center active:scale-95 transition-all shadow-[0_0_15px_rgba(249,128,6,0.4)]"
+                                >
+                                    {isTimerRunning ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                                </button>
+                                <button
+                                    onClick={handleNextDrill}
+                                    className="w-10 h-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-95 transition-all"
+                                >
+                                    <SkipForward size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold">Workout Plan</h3>
                     <span className="text-xs text-muted font-bold">{activeWorkout.steps.length} Steps</span>
@@ -1033,20 +1069,27 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                 <div className="space-y-0 relative">
                     {!isEditing && <div className="absolute left-[19px] top-4 bottom-4 w-[2px] bg-white/10"></div>}
 
-                    {activeWorkout.steps.map((step, idx) => (
+                    {activeWorkout.steps.map((step, idx) => {
+                        const isActiveStep = activeDrillIndex === idx;
+                        return (
                         <div key={idx} className={`relative ${!isEditing ? 'pl-10' : ''} pb-6 last:pb-0`}>
                             {!isEditing && (
-                                <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-background flex items-center justify-center z-10 
-                                    ${step.type === 'warmup' ? 'bg-blue-500 text-white' : 
-                                    step.type === 'cooldown' ? 'bg-purple-500 text-white' : 'bg-primary text-black'}`}>
-                                    {step.type === 'warmup' ? <Activity size={16} /> : 
+                                <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-background flex items-center justify-center z-10
+                                    ${isActiveStep ? 'bg-primary text-black ring-2 ring-primary/50' :
+                                    step.type === 'warmup' ? 'bg-blue-500 text-white' :
+                                    step.type === 'cooldown' ? 'bg-green-600 text-white' : 'bg-primary/40 text-white'}`}>
+                                    {isActiveStep ? <Play size={14} fill="currentColor" /> :
+                                    step.type === 'warmup' ? <Activity size={16} /> :
                                     step.type === 'cooldown' ? <CheckCircle2 size={16} /> : <Zap size={16} fill="currentColor" />}
                                 </div>
                             )}
 
-                            <div 
+                            <div
                                 onClick={() => !isEditing && startDrill(idx)}
-                                className={`bg-surface p-4 rounded-2xl border border-white/5 transition-all group flex items-center justify-between 
+                                className={`p-4 rounded-2xl border transition-all group flex items-center justify-between
+                                    ${isActiveStep
+                                        ? 'bg-primary/10 border-primary/40'
+                                        : 'bg-surface border-white/5'}
                                     ${!isEditing ? 'cursor-pointer hover:border-primary/50 active:scale-[0.99]' : ''}`}
                             >
                                 <div className="flex-1">
@@ -1070,7 +1113,8 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                                 )}
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
 
                     {isEditing && (
                         <div className="mt-6 pt-6 border-t border-white/5 animate-in fade-in">
@@ -1158,15 +1202,17 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                                 <Save size={20} className="text-black" />
                                 Finish & Save
                             </button>
+                        ) : activeDrillIndex !== null ? (
+                            <button
+                                onClick={toggleTimer}
+                                className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                            >
+                                {isTimerRunning ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                                {isTimerRunning ? 'Pause' : 'Resume'}
+                            </button>
                         ) : (
                             <button
-                                onClick={() => {
-                                  console.log("[StartWorkoutButton] CLICK", {
-                                    hasActiveWorkout: !!activeWorkout,
-                                    stepsLen: activeWorkout?.steps?.length,
-                                  });
-                                  startDrill(0);
-                                }}
+                                onClick={() => startDrill(0)}
                                 className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                             >
                                 <Play size={20} fill="currentColor" />
