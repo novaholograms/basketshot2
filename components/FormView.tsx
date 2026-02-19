@@ -122,7 +122,12 @@ export const FormView: React.FC = () => {
           const enhanced = await fetchGeminiExplanation({
             shotType: selectedShot?.id ?? 'unknown',
             score: result.score,
-            metrics: result.metrics as unknown as Record<string, number>,
+            metrics: {
+              elbowAlignment: (result.metrics as any)?.elbowAlignment,
+              releaseHeight: (result.metrics as any)?.releaseHeight,
+              wristFlick: (result.metrics as any)?.wristFlick,
+              lateralSway: (result.metrics as any)?.lateralSway,
+            },
             context: { framesProcessed: result.processedFrames },
           }, 5000);
           if (!enhanced) return;

@@ -26,14 +26,38 @@ type GeminiOut = {
   };
 };
 
+const ALLOWED_METRICS = ["elbowAlignment", "releaseHeight", "wristFlick", "lateralSway"] as const;
+type AllowedMetricKey = typeof ALLOWED_METRICS[number];
+
+function pickAllowedMetrics(metrics: Record<string, number>): Record<AllowedMetricKey, number> {
+  const out: Record<AllowedMetricKey, number> = {
+    elbowAlignment: 0,
+    releaseHeight: 0,
+    wristFlick: 0,
+    lateralSway: 0,
+  };
+  for (const k of ALLOWED_METRICS) {
+    const v = metrics?.[k];
+    if (typeof v === "number" && Number.isFinite(v)) out[k] = v;
+  }
+  return out;
+}
+
 const SYSTEM_PROMPT = `
 You are a professional basketball shooting coach analyzing biomechanical metrics.
 
 IMPORTANT RULES:
 - NEVER modify or return a different score. The score is immutable and provided by the local engine.
 - NEVER invent metrics or values. Only reference the provided values.
-- Focus on 2-3 weakest metrics (<0.65) for improvements.
-- Highlight 2-3 strongest metrics (>0.80) as strengths.
+- You MUST ONLY talk about these four visible metrics and NOTHING else:
+  1) Alignment (elbowAlignment)
+  2) Release (releaseHeight)
+  3) Flick (wristFlick)
+  4) Stability (lateralSway)
+- Do NOT mention any other metric names (stance width, knee loading, landing balance, vertical drive, etc.).
+- Do NOT mention any percentages outside these 4 metrics.
+- Focus on 1-2 weakest of the 4 metrics (<0.65) for improvements.
+- Highlight 1-2 strongest of the 4 metrics (>0.80) as strengths.
 - Be specific, actionable, encouraging. Use basketball coaching terminology.
 - Output ONLY valid JSON matching the schema below. No markdown, no extra text.
 
@@ -205,10 +229,11 @@ Deno.serve(async (req: Request) => {
       },
     });
 
+    const visibleMetrics = pickAllowedMetrics(payload.metrics);
     const prompt = JSON.stringify({
       shotType: payload.shotType,
       score: payload.score,
-      metrics: payload.metrics,
+      metrics: visibleMetrics,
       context: payload.context ?? {},
     });
 
