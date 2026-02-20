@@ -2,9 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRevenueCat } from '../contexts/RevenueCatContext';
 import { RevenueCatUI } from '@revenuecat/purchases-capacitor-ui';
-import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles, CreditCard } from 'lucide-react';
+import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles, CreditCard, FileText } from 'lucide-react';
 import { ViewType } from '../types';
 import { deleteUserAccount } from '../services/deleteAccountService';
+import { openExternalUrl } from '../lib/openExternalUrl';
+
+const LEGAL_BASE_URL = import.meta.env.VITE_LEGAL_BASE_URL || 'https://basketshotai.com';
+const openLegal = (hash: 'privacy' | 'terms' | 'support') =>
+  openExternalUrl(`${LEGAL_BASE_URL}/#${hash}`);
 
 interface ProfileViewProps {
   onNavigate?: (view: ViewType) => void;
@@ -278,11 +283,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
         <h4 className="text-lg font-bold mb-4 px-1">Privacy & Support</h4>
         <div className="bg-surface rounded-3xl overflow-hidden border border-white/5">
             <button
-              onClick={() => window.open(`${import.meta.env.VITE_LEGAL_BASE_URL ?? "https://example.com"}/#privacy`, "_blank", "noopener,noreferrer")}
+              onClick={() => openLegal('privacy')}
               className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 text-left"
             >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                         <Shield size={20} />
                     </div>
                     <span className="font-bold text-sm">Privacy Policy</span>
@@ -290,11 +295,23 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
                 <ChevronRight size={16} className="text-muted" />
             </button>
             <button
-              onClick={() => window.open(`${import.meta.env.VITE_LEGAL_BASE_URL ?? "https://example.com"}/#support`, "_blank", "noopener,noreferrer")}
+              onClick={() => openLegal('terms')}
+              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 text-left"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                        <FileText size={20} />
+                    </div>
+                    <span className="font-bold text-sm">Terms of Service</span>
+                </div>
+                <ChevronRight size={16} className="text-muted" />
+            </button>
+            <button
+              onClick={() => openLegal('support')}
               className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left"
             >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                         <HelpCircle size={20} />
                     </div>
                     <span className="font-bold text-sm">Help & Support</span>
