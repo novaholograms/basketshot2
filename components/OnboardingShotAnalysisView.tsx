@@ -707,8 +707,8 @@ if (performance?.memory) console.log("[MEM]", performance.memory);
             setShowGate(false);
             handleDone();
           }}
-          termsUrl="https://basketshot.ai/terms"
-          privacyUrl="https://basketshot.ai/privacy"
+          termsUrl={`${import.meta.env.VITE_LEGAL_BASE_URL ?? "https://example.com"}/#terms`}
+          privacyUrl={`${import.meta.env.VITE_LEGAL_BASE_URL ?? "https://example.com"}/#privacy`}
         />
       </div>
     );

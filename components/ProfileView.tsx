@@ -277,7 +277,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
       <section className="mb-8">
         <h4 className="text-lg font-bold mb-4 px-1">Privacy & Support</h4>
         <div className="bg-surface rounded-3xl overflow-hidden border border-white/5">
-            <button className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 text-left">
+            <button
+              onClick={() => window.open(`${import.meta.env.VITE_LEGAL_BASE_URL ?? "https://example.com"}/#privacy`, "_blank", "noopener,noreferrer")}
+              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 text-left"
+            >
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
                         <Shield size={20} />
@@ -286,9 +289,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
                 </div>
                 <ChevronRight size={16} className="text-muted" />
             </button>
-            <button className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left">
+            <button
+              onClick={() => window.open(`${import.meta.env.VITE_LEGAL_BASE_URL ?? "https://example.com"}/#support`, "_blank", "noopener,noreferrer")}
+              className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left"
+            >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
                         <HelpCircle size={20} />
                     </div>
                     <span className="font-bold text-sm">Help & Support</span>
