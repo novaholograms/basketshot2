@@ -17,6 +17,7 @@ export type ProfileRow = {
   height_cm?: number | null;
   weight_kg?: number | null;
   wingspan_cm?: number | null;
+  avatar_url?: string | null;
 };
 
 type AuthContextValue = {
@@ -44,6 +45,7 @@ type AuthContextValue = {
         | "height_cm"
         | "weight_kg"
         | "wingspan_cm"
+        | "avatar_url"
       >
     >
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -166,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         | "height_cm"
         | "weight_kg"
         | "wingspan_cm"
+        | "avatar_url"
       >
     >
   ) => {

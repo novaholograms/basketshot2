@@ -1,11 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRevenueCat } from '../contexts/RevenueCatContext';
 import { RevenueCatUI } from '@revenuecat/purchases-capacitor-ui';
-import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles, CreditCard, FileText } from 'lucide-react';
+import { Settings, Shield, HelpCircle, LogOut, Trash2, ChevronRight, Star, Mail, Edit2, UserPlus, Sparkles, CreditCard, FileText, Camera as CameraIcon, Loader2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ViewType } from '../types';
 import { deleteUserAccount } from '../services/deleteAccountService';
 import { openExternalUrl } from '../lib/openExternalUrl';
+import { uploadAvatar } from '../utils/avatarUpload';
 
 const LEGAL_BASE_URL = import.meta.env.VITE_LEGAL_BASE_URL || 'https://basketshotai.com';
 const openLegal = (hash: 'privacy' | 'terms' | 'support') =>
@@ -30,6 +33,9 @@ const FAVORITE_WORKOUTS = [
   }
 ];
 
+const FALLBACK_AVATAR =
+  "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80";
+
 export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const { user, profile, signOut, updateProfile } = useAuth();
   const { isPremium, customerInfo } = useRevenueCat();
@@ -41,6 +47,55 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteText, setDeleteText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const avatarSrc = localAvatarUrl || profile?.avatar_url || FALLBACK_AVATAR;
+
+  async function setAvatarFromDataUrl(dataUrl: string) {
+    if (!user?.id) return;
+    setIsUploadingAvatar(true);
+    try {
+      const publicUrl = await uploadAvatar(user.id, dataUrl);
+      setLocalAvatarUrl(`${publicUrl}?t=${Date.now()}`);
+      await updateProfile({ avatar_url: publicUrl });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
+  async function handlePickAvatar() {
+    if (!user?.id || isUploadingAvatar) return;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const photo = await CapCamera.getPhoto({
+          source: CameraSource.Prompt,
+          resultType: CameraResultType.DataUrl,
+          quality: 80,
+        });
+        if (photo?.dataUrl) await setAvatarFromDataUrl(photo.dataUrl);
+      } catch {
+        // user cancelled
+      }
+      return;
+    }
+
+    fileInputRef.current?.click();
+  }
+
+  async function handleWebFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = String(reader.result ?? "");
+      if (dataUrl.startsWith("data:")) await setAvatarFromDataUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
 
   const canConfirmDelete = deleteText === 'DELETE';
 
@@ -142,13 +197,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
 
           <div className="flex flex-col items-center text-center relative z-10">
             <div className="relative mb-4">
-                <div className="w-24 h-24 rounded-full p-1 border-2 border-primary/50">
-                    <img
-                        src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"
-                        alt="Profile"
-                        className="w-full h-full rounded-full object-cover"
-                    />
-                </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleWebFileChange}
+              />
+              <button
+                type="button"
+                onClick={() => void handlePickAvatar()}
+                disabled={!user?.id || isUploadingAvatar}
+                className="relative w-24 h-24 rounded-full p-1 border-2 border-primary/50 focus:outline-none disabled:opacity-60"
+                aria-label="Change profile photo"
+              >
+                <img
+                  src={avatarSrc}
+                  alt="Profile"
+                  className="w-full h-full rounded-full object-cover"
+                />
+                <span className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-black flex items-center justify-center shadow-lg shadow-primary/20 border border-black/10">
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CameraIcon className="h-4 w-4" />
+                  )}
+                </span>
+              </button>
             </div>
 
             {!isEditingName ? (
