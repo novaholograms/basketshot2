@@ -181,7 +181,7 @@ const App: React.FC = () => {
     switch (timeRange) {
         case 'week': return "Week";
         case 'month': return "Month";
-        default: return "Today's";
+        default: return "Today";
     }
   };
 
