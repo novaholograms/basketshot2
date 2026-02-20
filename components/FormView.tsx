@@ -12,13 +12,15 @@ const SHOT_TYPES = [
     id: '3pt',
     title: 'Jumpshot',
     icon: CircleDashed,
-    desc: 'Analyze your jump shot form'
+    desc: 'Analyze your jump shot form',
+    image: '/jumpshot.png'
   },
   {
     id: 'ft',
     title: 'Free Throw',
     icon: ArrowUpCircle,
-    desc: 'Routine & consistency'
+    desc: 'Routine & consistency',
+    image: '/free_throw.png'
   },
 ];
 
@@ -320,24 +322,34 @@ export const FormView: React.FC = () => {
          {/* Shot Type Selector */}
          <div className="flex overflow-x-auto gap-4 pb-8 -mx-6 px-6 no-scrollbar snap-x snap-mandatory">
             {SHOT_TYPES.map((type) => (
-                <div 
+                <div
                   key={type.id}
                   onClick={() => handleCardClick(type)}
                   className={`
-                    relative min-w-[200px] h-[280px] rounded-3xl p-6 flex flex-col justify-between snap-center cursor-pointer transition-all duration-300 border
+                    relative overflow-hidden min-w-[200px] h-[280px] rounded-3xl p-6 flex flex-col justify-between snap-center cursor-pointer transition-all duration-300 border
                     bg-surface border-white/10 hover:border-primary/50 hover:bg-white/5 active:scale-95
                   `}
                 >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/5 text-white">
-                     <type.icon size={28} />
-                  </div>
-                  <div>
-                    <h4 className="text-3xl font-extrabold leading-none mb-3 text-white">
-                      {type.title}
-                    </h4>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted">
-                      {type.desc}
-                    </p>
+                  <img
+                    src={type.image}
+                    alt={type.title}
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    loading="lazy"
+                    draggable={false}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20 pointer-events-none" />
+                  <div className="relative z-10 flex flex-col h-full justify-between">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/5 text-white">
+                       <type.icon size={28} />
+                    </div>
+                    <div>
+                      <h4 className="text-3xl font-extrabold leading-none mb-3 text-white">
+                        {type.title}
+                      </h4>
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                        {type.desc}
+                      </p>
+                    </div>
                   </div>
                 </div>
             ))}
