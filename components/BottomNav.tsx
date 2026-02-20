@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Dumbbell, Plus, FileText, User } from 'lucide-react';
+import { LayoutGrid, BookOpen, Plus, FileText, User } from 'lucide-react';
 import { ViewType } from '../types';
 
 interface BottomNavProps {
@@ -36,13 +36,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate })
         <span className={`text-[10px] font-bold ${getTextColor('home')} group-hover:text-white uppercase tracking-wider transition-colors`}>Home</span>
       </div>
 
-      {/* Form */}
-      <div 
-        onClick={() => onNavigate('form')}
+      {/* Diary */}
+      <div
+        onClick={() => onNavigate('diary')}
         className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer group"
       >
-        <Dumbbell className={`${getIconColor('form')} group-hover:text-white transition-colors`} size={24} />
-        <span className={`text-[10px] font-bold ${getTextColor('form')} group-hover:text-white uppercase tracking-wider transition-colors`}>Analyze</span>
+        <BookOpen className={`${getIconColor('diary')} group-hover:text-white transition-colors`} size={24} fill={currentView === 'diary' ? "currentColor" : "none"} strokeWidth={currentView === 'diary' ? 0 : 2} />
+        <span className={`text-[10px] font-bold ${getTextColor('diary')} group-hover:text-white uppercase tracking-wider transition-colors`}>Diary</span>
       </div>
 
       {/* Floating Add Button */}

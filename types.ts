@@ -5,6 +5,7 @@ export type ViewType =
   | 'my-workouts'
   | 'profile'
   | 'add'
+  | 'diary'
   | 'onboarding'
   | 'onboarding-shot-analysis';
 
@@ -74,3 +75,25 @@ export interface ShotAnalysisRow {
 }
 
 export type ShotAnalysisInsert = Omit<ShotAnalysisRow, 'id' | 'created_at'>;
+
+export type DiaryEntryRow = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  entry_date: string;
+  title: string;
+  notes: string;
+  rating: number | null;
+  meta: any | null;
+};
+
+export type DiaryEntryInsert = {
+  user_id: string;
+  entry_date?: string;
+  title?: string;
+  notes?: string;
+  rating?: number | null;
+  meta?: any | null;
+};
+
+export type DiaryEntryUpdate = Partial<Omit<DiaryEntryInsert, 'user_id'>>;

@@ -12,6 +12,7 @@ import { MyWorkoutsView } from './components/MyWorkoutsView';
 import { FormView } from './components/FormView';
 import { ProfileView } from './components/ProfileView';
 import { AddView } from './components/AddView';
+import { DiaryView } from './components/DiaryView';
 import { OnboardingView } from './components/OnboardingView';
 import OnboardingShotAnalysisView from './components/OnboardingShotAnalysisView';
 import { TrendingCarousel } from './components/TrendingCarousel';
@@ -219,6 +220,8 @@ const App: React.FC = () => {
         );
       case 'form':
         return <FormView />;
+      case 'diary':
+        return <DiaryView />;
       case 'home':
       default:
         return (
