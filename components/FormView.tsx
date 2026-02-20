@@ -97,7 +97,7 @@ export const FormView: React.FC = () => {
 
     try {
       console.log("[FORM] analyzeVideo begin");
-      const result = await analyzeVideo(videoUrl, (percent) => {
+      const result = await analyzeVideo(videoUrl, selectedShot?.id, (percent) => {
         // Optional: could update UI with progress
       });
       console.log("[FORM] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });

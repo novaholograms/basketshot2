@@ -185,7 +185,7 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
        // DEBUG: memory snapshot (Chrome only)
 // @ts-ignore
 if (performance?.memory) console.log("[MEM]", performance.memory);
-      const result = await analyzeVideo(videoUrl, () => {});
+      const result = await analyzeVideo(videoUrl, selectedShot?.id, () => {});
       console.log("[ONBOARDING] analyzeVideo success", { score: result?.score, isInvalid: result?.isInvalid });
       setAnalysisResult(result);
       setGeminiEnhanced(false);

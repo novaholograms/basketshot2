@@ -349,6 +349,7 @@ function emptyMetrics(): ShotMetrics {
 
 export async function analyzeVideo(
   videoUrl: string,
+  shotType?: string,
   onProgress?: (percent: number) => void
 ): Promise<AnalysisResult> {
   await resetPoseLandmarker();
@@ -549,7 +550,8 @@ export async function analyzeVideo(
     Number.isFinite(baselineY) && Number.isFinite(gateReleaseY)
       ? baselineY - gateReleaseY
       : 0;
-  const LIFT_THR = 0.18; // more tolerant: allows real shots like the one in logs (0.202)
+  const isFT = shotType === "ft";
+  const LIFT_THR = isFT ? 0.10 : 0.18;
   const gateLift = wristLift >= LIFT_THR;
 
   // Gate 3: Follow-through (wrist stays high after release)
@@ -568,7 +570,7 @@ export async function analyzeVideo(
       gateHighCount++;
     }
   }
-  const gateFollow = gateHighCount >= 3; // 3/7
+  const gateFollow = gateHighCount >= (isFT ? 2 : 3);
 
   const gatesPassed = [gateElbow, gateLift, gateFollow].filter(Boolean).length;
   if (gatesPassed < 2) {
