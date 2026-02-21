@@ -278,7 +278,7 @@ export const DiaryView: React.FC = () => {
   Log a game
 </button>
 
-      <div className="rounded-3xl bg-surface border border-yellow/5 p-5">
+      <div className="rounded-3xl bg-surface border border-yellow p-5">
         <div className="text-xs font-extrabold  tracking-[0.2em] text-muted">Coach's Advice</div>
         {coachTipLoading ? (
           <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
