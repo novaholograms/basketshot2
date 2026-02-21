@@ -224,7 +224,7 @@ export const DiaryView: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2 rounded-3xl bg-surface p-8 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-centered text-muted">Avg points</div>
+          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Avg points</div>
           <div className="mt-3 text-7xl font-extrabold text-white leading-none">{stats.avgPoints}</div>
         </div>
         <div className="rounded-3xl bg-surface p-6 border border-white/5">
