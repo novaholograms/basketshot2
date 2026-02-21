@@ -84,7 +84,7 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
       <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-white/5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Powered by Gemini</div>
+            
             <div className="text-lg font-extrabold text-white leading-tight">AI Coach</div>
           </div>
           <button
