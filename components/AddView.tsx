@@ -53,32 +53,4 @@ export const AddView: React.FC<AddViewProps> = ({ onNavigate }) => {
       </div>
 
       <div className="grid grid-cols-2 gap-4 w-full mt-4">
-        {/* Diary shortcut */}
-        <button
-          type="button"
-          onClick={() => onNavigate('diary')}
-          className="w-full rounded-[2rem] bg-white/5 border border-white/10 hover:border-primary/50 p-5 text-left active:scale-[0.98] transition-all"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
-            <BookOpen size={20} />
-          </div>
-          <div className="font-extrabold text-sm text-white">Diary</div>
-          <div className="text-xs text-muted font-medium mt-0.5">Log notes & sessions</div>
-        </button>
-
-        {/* Analyze shortcut (text-only) */}
-        <button
-          type="button"
-          onClick={() => onNavigate('form')}
-          className="w-full rounded-[2rem] bg-white/5 border border-white/10 hover:border-primary/50 p-5 text-left active:scale-[0.98] transition-all"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
-            <Dumbbell size={20} />
-          </div>
-          <div className="font-extrabold text-sm text-white">Analyze</div>
-          <div className="text-xs text-muted font-medium mt-0.5">Analyze a shot video</div>
-        </button>
-      </div>
-    </div>
-  );
-};
+       
