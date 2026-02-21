@@ -17,6 +17,9 @@ import { OnboardingView } from './components/OnboardingView';
 import OnboardingShotAnalysisView from './components/OnboardingShotAnalysisView';
 import { TrendingCarousel } from './components/TrendingCarousel';
 import CoachChatView from './components/CoachChatView';
+import ShotAnalysisCard from './components/ShotAnalysisCard';
+import ShotAnalysesListView from './components/ShotAnalysesListView';
+import { fetchShotAnalysesByShotType } from './services/analysisStorage';
 import { Session, ViewType } from './types';
 import { ChevronDown } from 'lucide-react';
 
@@ -109,6 +112,11 @@ const App: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
   const [todayMinutes, setTodayMinutes] = useState(() => readTodayMinutes());
+  const [selectedShotType, setSelectedShotType] = useState<"3pt" | "ft" | null>(null);
+  const [home3ptScores, setHome3ptScores] = useState<number[]>([]);
+  const [homeFtScores, setHomeFtScores] = useState<number[]>([]);
+  const [home3ptLast, setHome3ptLast] = useState<number | null>(null);
+  const [homeFtLast, setHomeFtLast] = useState<number | null>(null);
 
   useEffect(() => {
     const refresh = () => setTodayMinutes(readTodayMinutes());
@@ -120,9 +128,57 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const userId = session?.user?.id ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHomeShotSummaries() {
+      if (!userId) {
+        setHome3ptScores([]);
+        setHomeFtScores([]);
+        setHome3ptLast(null);
+        setHomeFtLast(null);
+        return;
+      }
+
+      try {
+        const [rows3pt, rowsFt] = await Promise.all([
+          fetchShotAnalysesByShotType(userId, "3pt", 5),
+          fetchShotAnalysesByShotType(userId, "ft", 5),
+        ]);
+
+        if (cancelled) return;
+
+        const scores3pt = (rows3pt ?? []).map((r) => r.score).filter((n): n is number => typeof n === "number");
+        const scoresFt = (rowsFt ?? []).map((r) => r.score).filter((n): n is number => typeof n === "number");
+
+        setHome3ptScores(scores3pt);
+        setHomeFtScores(scoresFt);
+        setHome3ptLast(scores3pt[0] ?? null);
+        setHomeFtLast(scoresFt[0] ?? null);
+      } catch {
+        if (!cancelled) {
+          setHome3ptScores([]);
+          setHomeFtScores([]);
+          setHome3ptLast(null);
+          setHomeFtLast(null);
+        }
+      }
+    }
+
+    loadHomeShotSummaries();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   const handleNavigate = (view: ViewType) => {
     if (currentView === 'workout' && view !== 'workout') {
       setSelectedWorkout(null);
+    }
+    if (currentView === "shot-analyses-list" && view !== "shot-analyses-list") {
+      setSelectedShotType(null);
     }
     setCurrentView(view);
   };
@@ -270,6 +326,14 @@ const App: React.FC = () => {
         return <FormView />;
       case 'diary':
         return <DiaryView />;
+      case 'shot-analyses-list':
+        return (
+          <ShotAnalysesListView
+            userId={userId}
+            shotType={(selectedShotType ?? "3pt") as "3pt" | "ft"}
+            onBack={() => setCurrentView('home')}
+          />
+        );
       case 'home':
       default:
         return (
@@ -277,9 +341,9 @@ const App: React.FC = () => {
             {/* Performance Header */}
             <div className="flex items-center justify-between mb-6 mt-2">
               <h3 className="text-2xl font-extrabold tracking-tight">{getTitle()} Performance</h3>
-              
+
               <div className="relative">
-                  <select 
+                  <select
                     value={timeRange}
                     onChange={(e) => setTimeRange(e.target.value as 'today' | 'week' | 'month')}
                     className="appearance-none bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest pl-3 pr-7 py-1.5 rounded-full border border-transparent hover:border-primary/30 focus:outline-none cursor-pointer transition-all"
@@ -292,24 +356,48 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            {/* Shot Analysis Cards */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <ShotAnalysisCard
+                title="Jumpshot"
+                subtitle="3PT"
+                lastScore={home3ptLast}
+                sparklineScores={home3ptScores}
+                onClick={() => {
+                  setSelectedShotType("3pt");
+                  setCurrentView("shot-analyses-list");
+                }}
+              />
+              <ShotAnalysisCard
+                title="Free Throw"
+                subtitle="FT"
+                lastScore={homeFtLast}
+                sparklineScores={homeFtScores}
+                onClick={() => {
+                  setSelectedShotType("ft");
+                  setCurrentView("shot-analyses-list");
+                }}
+              />
+            </div>
+
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <StatCard 
-                label="Avg Accuracy" 
-                value={stats.accuracy} 
-                unit="%" 
-                highlight={true} 
-                fullWidth={true} 
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <StatCard
+                label="Avg Accuracy"
+                value={stats.accuracy}
+                unit="%"
+                highlight={true}
+                fullWidth={true}
               />
-              <StatCard 
-                label="Workouts" 
-                value={stats.sessionsCompleted} 
-                subValue={timeRange === 'today' ? "/ 5" : timeRange === 'week' ? "/ 20" : "/ 80"} 
+              <StatCard
+                label="Workouts"
+                value={stats.sessionsCompleted}
+                subValue={timeRange === 'today' ? "/ 5" : timeRange === 'week' ? "/ 20" : "/ 80"}
               />
-              <StatCard 
-                label="Time" 
-                value={stats.totalTime} 
-                unit="M" 
+              <StatCard
+                label="Time"
+                value={stats.totalTime}
+                unit="M"
               />
             </div>
 
