@@ -119,6 +119,9 @@ const App: React.FC = () => {
   }, []);
 
   const handleNavigate = (view: ViewType) => {
+    if (currentView === 'workout' && view !== 'workout') {
+      setSelectedWorkout(null);
+    }
     setCurrentView(view);
   };
 

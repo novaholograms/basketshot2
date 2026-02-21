@@ -889,13 +889,13 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       <div className="bg-surface rounded-3xl p-6 border border-white/5 shadow-lg">
          <div className="h-40 flex items-end justify-between gap-2">
             {WEEKLY_STATS.map((stat, index) => {
-               const height = chartVisible ? Math.max(10, stat.score) : 0; // Use minimum height for interaction
+               const height = chartVisible ? Math.max(0, stat.score) : 0;
                const isSelected = selectedDayIndex === index;
                
                return (
                   <div
                     key={stat.fullDay}
-                    className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
+                    className="flex-1 h-full flex flex-col items-center gap-2 group cursor-pointer"
                     onClick={() => setSelectedDayIndex(index)}
                   >
                      {/* Bar */}
