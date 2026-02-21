@@ -116,7 +116,7 @@ export const DiaryView: React.FC = () => {
   const [showDayPreview, setShowDayPreview] = useState(false);
   const [dayPreviewDate, setDayPreviewDate] = useState<string | null>(null);
 
-  const [coachTip, setCoachTip] = useState<string | null>(null);
+  const [coachTip, setCoachTip] = useState<string>("");
   const [coachTipLoading, setCoachTipLoading] = useState(false);
 
   const filteredEntries = useMemo(() => {
@@ -286,10 +286,10 @@ export const DiaryView: React.FC = () => {
   {coachTipLoading ? (
     <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
   ) : (
-    <div className="mt-3 rounded-2xl bg-white/5 border-white/5 p-4 text-white/80 font-semibold text-sm leading-relaxed">
-      {coachTip ?? "Log a game to see advice"}
+    <div className="mt-3 rounded-2xl bg-white/5 border border-white/10 p-4 text-white/80 font-semibold text-sm leading-relaxed">
+      {coachTip || "Log a game to see advice"}
     </div>
-        )}
+  )}
       </div>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">

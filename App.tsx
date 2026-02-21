@@ -16,6 +16,7 @@ import { DiaryView } from './components/DiaryView';
 import { OnboardingView } from './components/OnboardingView';
 import OnboardingShotAnalysisView from './components/OnboardingShotAnalysisView';
 import { TrendingCarousel } from './components/TrendingCarousel';
+import CoachChatView from './components/CoachChatView';
 import { Session, ViewType } from './types';
 import { ChevronDown } from 'lucide-react';
 
@@ -103,6 +104,7 @@ const App: React.FC = () => {
   const { session, profile, loading } = useAuth();
   const { isPremium, loading: revenueCatLoading } = useRevenueCat();
   const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [showCoachChat, setShowCoachChat] = useState(false);
   const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
@@ -326,14 +328,15 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-background text-white max-w-md mx-auto shadow-2xl overflow-hidden relative">
       
-      {!isFullScreen && currentView === 'home' && <Header />}
+      {!isFullScreen && currentView === 'home' && <Header onOpenCoachChat={() => setShowCoachChat(true)} />}
 
       <main className={`flex-1 px-6 overflow-y-auto no-scrollbar ${!isFullScreen ? 'pb-24' : ''} ${currentView !== 'home' && !isFullScreen ? 'pt-8' : ''}`}>
         {renderContent()}
       </main>
 
       {!isFullScreen && <BottomNav currentView={currentView} onNavigate={handleNavigate} />}
-      
+
+      {showCoachChat && <CoachChatView onClose={() => setShowCoachChat(false)} />}
     </div>
   );
 };

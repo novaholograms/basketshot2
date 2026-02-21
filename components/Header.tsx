@@ -1,10 +1,11 @@
 import React from 'react';
+import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const FALLBACK_AVATAR =
   "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&q=80";
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachChat }) => {
   const { profile } = useAuth();
   const name = (profile?.full_name ?? '').trim();
 
@@ -24,6 +25,15 @@ export const Header: React.FC = () => {
           </h1>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={onOpenCoachChat}
+        className="h-11 w-11 rounded-2xl bg-white/5 border border-white/10 text-white/80 active:scale-[0.97] transition-transform flex items-center justify-center"
+        aria-label="Open AI Coach"
+      >
+        <MessageCircle className="h-5 w-5" />
+      </button>
     </header>
   );
 };
