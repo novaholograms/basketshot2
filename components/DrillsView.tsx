@@ -5,6 +5,8 @@ import { generateWorkoutWithAI } from "../services/geminiExplainer";
 import { getSavedWorkoutIds, saveWorkout, unsaveWorkout } from "../services/savedWorkoutsService";
 
 const TODAY_MINUTES_KEY = "bs_today_minutes_v1";
+const WEEK_MINUTES_KEY = "bs_week_minutes_v1";
+const DAILY_GOAL_MINUTES = 60;
 const WORKOUT_PROGRESS_PREFIX = "bs_workout_progress_v1:";
 const COMPLETED_WORKOUTS_KEY = "bs_completed_workouts_v1";
 
@@ -29,8 +31,38 @@ function readTodayMinutes(): number {
   }
 }
 
+function readWeekMinutes(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(WEEK_MINUTES_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeWeekMinutes(map: Record<string, number>) {
+  localStorage.setItem(WEEK_MINUTES_KEY, JSON.stringify(map));
+}
+
 function writeTodayMinutes(minutes: number) {
-  localStorage.setItem(TODAY_MINUTES_KEY, JSON.stringify({ date: todayKey(), minutes }));
+  const date = todayKey();
+  localStorage.setItem(TODAY_MINUTES_KEY, JSON.stringify({ date, minutes }));
+  const week = readWeekMinutes();
+  week[date] = minutes;
+  writeWeekMinutes(week);
+}
+
+function startOfWeekMonday(d: Date): Date {
+  const x = new Date(d);
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function ymd(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function readCompletedWorkouts(): Record<string, { date: string; minutes: number }> {
@@ -170,22 +202,32 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
   // Chart State
   const [chartVisible, setChartVisible] = useState(false);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(5); // Default to Saturday (high score)
+  const [weekMinutes, setWeekMinutes] = useState<Record<string, number>>(() => readWeekMinutes());
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(() => {
+    const now = new Date();
+    const monday = startOfWeekMonday(now);
+    const diff = Math.floor((now.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(6, Math.max(0, diff));
+  });
   const didAutoLoadDefaultWorkout = useRef(false);
   const dbgIdRef = useRef<string>(`DrillsView#${Math.random().toString(36).slice(2, 8)}`);
   const dbg = (...args: any[]) => console.log(`[${dbgIdRef.current}]`, ...args);
   const dbgWarn = (...args: any[]) => console.warn(`[${dbgIdRef.current}]`, ...args);
 
-  // Mock Progress Data
-  const WEEKLY_STATS = [
-    { day: 'M', score: 68, fullDay: 'Monday' },
-    { day: 'T', score: 74, fullDay: 'Tuesday' },
-    { day: 'W', score: 55, fullDay: 'Wednesday' },
-    { day: 'T', score: 82, fullDay: 'Thursday' },
-    { day: 'F', score: 65, fullDay: 'Friday' },
-    { day: 'S', score: 91, fullDay: 'Saturday' },
-    { day: 'S', score: 78, fullDay: 'Sunday' },
-  ];
+  const WEEKLY_STATS = React.useMemo(() => {
+    const now = new Date();
+    const monday = startOfWeekMonday(now);
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const full = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return Array.from({ length: 7 }).map((_, i) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + i);
+      const key = ymd(dayDate);
+      const mins = weekMinutes[key] ?? 0;
+      const score = Math.min(100, Math.round((mins / DAILY_GOAL_MINUTES) * 100));
+      return { day: labels[i], fullDay: full[i], dateKey: key, minutes: mins, score };
+    });
+  }, [weekMinutes]);
 
   // --- Helpers for Workout Logic ---
 
@@ -423,6 +465,17 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
         setChartVisible(true);
     }, 200);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Live refresh of week minutes from localStorage
+  useEffect(() => {
+    const refresh = () => setWeekMinutes(readWeekMinutes());
+    window.addEventListener("storage", refresh);
+    const t = window.setInterval(refresh, 500);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.clearInterval(t);
+    };
   }, []);
 
   const saveWorkoutProgress = (wkt: WorkoutDetail, completed: Set<number>, activeIdx: number | null, tLeft: number) => {
@@ -823,11 +876,14 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
             <BarChart3 size={18} className="text-primary" />
             Weekly Progress
          </h3>
-         {selectedDayIndex !== null && (
-            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-in fade-in">
-                {WEEKLY_STATS[selectedDayIndex].fullDay}: {WEEKLY_STATS[selectedDayIndex].score > 0 ? WEEKLY_STATS[selectedDayIndex].score + '%' : 'Rest'}
-            </span>
-         )}
+         {selectedDayIndex !== null && (() => {
+            const sel = WEEKLY_STATS[selectedDayIndex];
+            return (
+              <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-in fade-in">
+                {sel.fullDay}: {sel.minutes > 0 ? `${sel.minutes} min (${sel.score}%)` : 'Rest'}
+              </span>
+            );
+         })()}
       </div>
 
       <div className="bg-surface rounded-3xl p-6 border border-white/5 shadow-lg">
