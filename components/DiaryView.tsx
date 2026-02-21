@@ -274,11 +274,8 @@ export const DiaryView: React.FC = () => {
   type="button"
   onClick={openCreateWizard}
   className="relative w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform overflow-visible"
->
- 
+> 
   Log a game
-
-  
 </button>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
