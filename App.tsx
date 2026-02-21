@@ -382,7 +382,7 @@ const App: React.FC = () => {
             {/* Shot scores (debajo de Trending Drills, encima de Analyze your Shot) */}
             <div className="mt-4 space-y-3">
               {/* Fila 1: puntuaciones */}
-              <div className="grid grid-cols-2 gap-3 text-orange">
+              <div className="grid grid-cols-2 gap-3">
                 <ShotAnalysisCard
                   variant="score"
                   label="JUMPSHOT"
