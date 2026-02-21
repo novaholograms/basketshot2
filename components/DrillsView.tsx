@@ -4,17 +4,22 @@ import { useAuth } from "../contexts/AuthContext";
 import { generateWorkoutWithAI } from "../services/geminiExplainer";
 import { getSavedWorkoutIds, saveWorkout, unsaveWorkout } from "../services/savedWorkoutsService";
 
+const TODAY_MINUTES_KEY = "bs_today_minutes_v1";
+const WORKOUT_PROGRESS_PREFIX = "bs_workout_progress_v1:";
+const COMPLETED_WORKOUTS_KEY = "bs_completed_workouts_v1";
+
 function todayKey() {
   const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getWorkoutKey(w: any): string {
+  return w?.id ?? w?.title ?? "unknown";
 }
 
 function readTodayMinutes(): number {
   try {
-    const raw = localStorage.getItem("bs_today_minutes_v1");
+    const raw = localStorage.getItem(TODAY_MINUTES_KEY);
     if (!raw) return 0;
     const parsed = JSON.parse(raw) as { date: string; minutes: number };
     if (parsed.date !== todayKey()) return 0;
@@ -24,14 +29,21 @@ function readTodayMinutes(): number {
   }
 }
 
-function addTodayMinutes(delta: number) {
-  if (!delta || delta <= 0) return;
-  const current = readTodayMinutes();
-  const next = current + delta;
-  localStorage.setItem(
-    "bs_today_minutes_v1",
-    JSON.stringify({ date: todayKey(), minutes: next })
-  );
+function writeTodayMinutes(minutes: number) {
+  localStorage.setItem(TODAY_MINUTES_KEY, JSON.stringify({ date: todayKey(), minutes }));
+}
+
+function readCompletedWorkouts(): Record<string, { date: string; minutes: number }> {
+  try {
+    const raw = localStorage.getItem(COMPLETED_WORKOUTS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCompletedWorkouts(map: Record<string, { date: string; minutes: number }>) {
+  localStorage.setItem(COMPLETED_WORKOUTS_KEY, JSON.stringify(map));
 }
 
 export const PRESET_WORKOUTS = [
@@ -125,6 +137,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   const [showDrillInfo, setShowDrillInfo] = useState(false);
   const [isWorkoutComplete, setIsWorkoutComplete] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const completedStepsRef = useRef<Set<number>>(new Set());
   const lastAutoCompletedKeyRef = React.useRef<string | null>(null);
 
   const computedCompletedMinutes = React.useMemo(() => {
@@ -311,13 +324,39 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     const details = generateWorkoutPlan(workout.title, workout.duration, workout.image, workout.intensity, workout.category);
     setActiveWorkout(details);
     setIsEditing(false);
-    setIsWorkoutComplete(false);
     setShotsMade('');
-    setCompletedSteps(new Set());
     lastAutoCompletedKeyRef.current = null;
-    setActiveDrillIndex(null);
-    setTimeLeft(0);
-    setIsTimerRunning(false);
+
+    const completedMap = readCompletedWorkouts();
+    const isCompletedToday = completedMap[getWorkoutKey(details)]?.date === todayKey();
+
+    if (isCompletedToday) {
+      const allDone = new Set(details.steps.map((_, i) => i));
+      setCompletedSteps(allDone);
+      completedStepsRef.current = allDone;
+      setIsWorkoutComplete(true);
+      setActiveDrillIndex(null);
+      setTimeLeft(0);
+      setIsTimerRunning(false);
+    } else {
+      const loaded = loadWorkoutProgress(details);
+      if (loaded) {
+        setCompletedSteps(loaded.completed);
+        completedStepsRef.current = loaded.completed;
+        setIsWorkoutComplete(false);
+        setActiveDrillIndex(loaded.activeIdx);
+        setTimeLeft(loaded.activeIdx !== null ? loaded.timeLeft : 0);
+        setIsTimerRunning(false);
+      } else {
+        const emptySet = new Set<number>();
+        setCompletedSteps(emptySet);
+        completedStepsRef.current = emptySet;
+        setIsWorkoutComplete(false);
+        setActiveDrillIndex(null);
+        setTimeLeft(0);
+        setIsTimerRunning(false);
+      }
+    }
 
     if (details.targetShots) {
         setShotsAttempted(details.targetShots.toString());
@@ -374,6 +413,10 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     };
   }, [userId]);
 
+  useEffect(() => {
+    completedStepsRef.current = completedSteps;
+  }, [completedSteps]);
+
   // Effect for Chart Animation
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -381,6 +424,33 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     }, 200);
     return () => clearTimeout(timer);
   }, []);
+
+  const saveWorkoutProgress = (wkt: WorkoutDetail, completed: Set<number>, activeIdx: number | null, tLeft: number) => {
+    const key = WORKOUT_PROGRESS_PREFIX + getWorkoutKey(wkt);
+    localStorage.setItem(key, JSON.stringify({
+      date: todayKey(),
+      completed: Array.from(completed),
+      activeIdx,
+      timeLeft: tLeft,
+    }));
+  };
+
+  const loadWorkoutProgress = (wkt: WorkoutDetail): { completed: Set<number>; activeIdx: number | null; timeLeft: number } | null => {
+    try {
+      const key = WORKOUT_PROGRESS_PREFIX + getWorkoutKey(wkt);
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { date: string; completed: number[]; activeIdx: number | null; timeLeft: number };
+      if (parsed.date !== todayKey()) return null;
+      return {
+        completed: new Set(parsed.completed || []),
+        activeIdx: typeof parsed.activeIdx === "number" ? parsed.activeIdx : null,
+        timeLeft: typeof parsed.timeLeft === "number" ? parsed.timeLeft : 0,
+      };
+    } catch {
+      return null;
+    }
+  };
 
   const handleCreateCustom = () => {
     setActiveWorkout({
@@ -529,26 +599,41 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   const markStepCompleted = (index: number) => {
     if (!activeWorkout) return;
 
-    setCompletedSteps((prev) => {
-      const next = new Set(prev);
-      const wasAlreadyCompleted = next.has(index);
-      next.add(index);
+    if (completedStepsRef.current.has(index)) return;
 
-      if (!wasAlreadyCompleted) {
-        const mins = activeWorkout.steps[index]?.duration ?? 0;
-        addTodayMinutes(mins);
-      }
+    const mins = activeWorkout.steps[index]?.duration ?? 0;
 
-      return next;
-    });
+    const nextSet = new Set(completedStepsRef.current);
+    nextSet.add(index);
+    completedStepsRef.current = nextSet;
+    setCompletedSteps(nextSet);
+
+    if (mins > 0) {
+      writeTodayMinutes(readTodayMinutes() + mins);
+    }
 
     setIsTimerRunning(false);
 
     if (index < activeWorkout.steps.length - 1) {
-      selectDrillPaused(index + 1);
+      const nextIdx = index + 1;
+      setActiveDrillIndex(nextIdx);
+      const nextTimeLeft = activeWorkout.steps[nextIdx].duration * 60;
+      setTimeLeft(nextTimeLeft);
+      setIsTimerRunning(false);
+      saveWorkoutProgress(activeWorkout, nextSet, nextIdx, nextTimeLeft);
     } else {
       setActiveDrillIndex(null);
+      setTimeLeft(0);
       setIsWorkoutComplete(true);
+
+      const map = readCompletedWorkouts();
+      map[getWorkoutKey(activeWorkout)] = {
+        date: todayKey(),
+        minutes: Array.from(nextSet).reduce((s, i) => s + (activeWorkout.steps[i]?.duration ?? 0), 0),
+      };
+      writeCompletedWorkouts(map);
+
+      saveWorkoutProgress(activeWorkout, nextSet, null, 0);
     }
   };
 
@@ -606,19 +691,17 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       interval = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
-      if (activeWorkout && activeDrillIndex !== null) {
-        const key = `${activeWorkout.title}:${activeDrillIndex}`;
-        if (lastAutoCompletedKeyRef.current !== key) {
-          lastAutoCompletedKeyRef.current = key;
-          setIsTimerRunning(false);
-          markStepCompleted(activeDrillIndex);
-        } else {
-          setIsTimerRunning(false);
-        }
+    } else if (timeLeft === 0 && activeWorkout && activeDrillIndex !== null) {
+      const key = `${getWorkoutKey(activeWorkout)}:${activeDrillIndex}`;
+      if (lastAutoCompletedKeyRef.current !== key) {
+        lastAutoCompletedKeyRef.current = key;
+        setIsTimerRunning(false);
+        markStepCompleted(activeDrillIndex);
       } else {
         setIsTimerRunning(false);
       }
+    } else {
+      setIsTimerRunning(false);
     }
     return () => clearInterval(interval);
   }, [isTimerRunning, timeLeft, activeWorkout, activeDrillIndex]);
@@ -844,34 +927,48 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
         </div>
         
         <div className="flex overflow-x-auto gap-4 pb-4 -mx-6 px-6 no-scrollbar snap-x snap-mandatory">
-          {PRESET_WORKOUTS.map((workout, index) => (
-            <div 
-              key={index}
-              onClick={() => handlePresetClick(workout)}
-              className="relative min-w-[160px] h-[220px] rounded-3xl overflow-hidden snap-start border border-white/5 group cursor-pointer"
-            >
-              <img 
-                src={workout.image} 
-                alt={workout.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-              
-              <div className="absolute bottom-0 left-0 p-4 w-full">
-                <div className="flex gap-2 mb-2">
-                    <span className="text-[10px] bg-primary/90 text-black font-bold px-2 py-0.5 rounded-full inline-block">
-                    {workout.duration}
-                    </span>
+          {(() => {
+            const completedMap = readCompletedWorkouts();
+            return PRESET_WORKOUTS.map((workout, index) => {
+              const wKey = getWorkoutKey({ title: workout.title });
+              const isDoneToday = completedMap[wKey]?.date === todayKey();
+              return (
+                <div
+                  key={index}
+                  onClick={() => handlePresetClick(workout)}
+                  className="relative min-w-[160px] h-[220px] rounded-3xl overflow-hidden snap-start border border-white/5 group cursor-pointer"
+                >
+                  <img
+                    src={workout.image}
+                    alt={workout.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+
+                  {isDoneToday && (
+                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                      <CheckCircle2 size={10} />
+                      Done
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-0 left-0 p-4 w-full">
+                    <div className="flex gap-2 mb-2">
+                        <span className="text-[10px] bg-primary/90 text-black font-bold px-2 py-0.5 rounded-full inline-block">
+                        {workout.duration}
+                        </span>
+                    </div>
+                    <h4 className="text-sm font-extrabold leading-tight mb-1">{workout.title}</h4>
+
+                    <div className="flex items-center gap-1 text-muted group-hover:text-primary transition-colors mt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wide">{isDoneToday ? 'Completed' : 'Start'}</span>
+                      <ChevronRight size={12} />
+                    </div>
+                  </div>
                 </div>
-                <h4 className="text-sm font-extrabold leading-tight mb-1">{workout.title}</h4>
-                
-                <div className="flex items-center gap-1 text-muted group-hover:text-primary transition-colors mt-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wide">Start</span>
-                  <ChevronRight size={12} />
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            });
+          })()}
         </div>
       </section>
 
@@ -1063,7 +1160,9 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                       setIsTimerRunning(false);
                       setActiveDrillIndex(null);
                       setTimeLeft(0);
-                      setCompletedSteps(new Set());
+                      const empty = new Set<number>();
+                      setCompletedSteps(empty);
+                      completedStepsRef.current = empty;
                       lastAutoCompletedKeyRef.current = null;
                       setIsWorkoutComplete(false);
                     }}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useRevenueCat } from './contexts/RevenueCatContext';
 import { AuthView } from './components/AuthView';
@@ -106,12 +106,19 @@ const App: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
-  const [todayMinutesSnapshot, setTodayMinutesSnapshot] = useState(() => readTodayMinutes());
+  const [todayMinutes, setTodayMinutes] = useState(() => readTodayMinutes());
+
+  useEffect(() => {
+    const refresh = () => setTodayMinutes(readTodayMinutes());
+    window.addEventListener("storage", refresh);
+    const t = setInterval(refresh, 500);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      clearInterval(t);
+    };
+  }, []);
 
   const handleNavigate = (view: ViewType) => {
-    if (view === 'home') {
-      setTodayMinutesSnapshot(readTodayMinutes());
-    }
     setCurrentView(view);
   };
 
@@ -148,10 +155,10 @@ const App: React.FC = () => {
       sessionsCompleted: timeRange === 'today' ? 3 : baseSessions * multiplier,
       totalTime:
         timeRange === 'today'
-          ? todayMinutesSnapshot
+          ? todayMinutes
           : Math.round(baseTotalTime * multiplier)
     };
-  }, [sessions, timeRange, todayMinutesSnapshot]);
+  }, [sessions, timeRange, todayMinutes]);
 
   // DEBUG: Log app guard state
   console.log("[APP] state", {
