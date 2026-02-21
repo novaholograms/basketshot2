@@ -280,18 +280,7 @@ export const DiaryView: React.FC = () => {
 
   Log a game
 
-  <style>{`
-    .ring-wave {
-      border: 2px solid rgba(255, 255, 255, 0.28);
-      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.22);
-      animation: wave 1.6s ease-out infinite;
-    }
-    @keyframes wave {
-      0%   { transform: scale(1);   opacity: 0.85; }
-      70%  { transform: scale(1.08); opacity: 0.00; }
-      100% { transform: scale(1.08); opacity: 0.00; }
-    }
-  `}</style>
+  
 </button>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
