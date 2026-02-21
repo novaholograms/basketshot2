@@ -286,7 +286,7 @@ export const DiaryView: React.FC = () => {
   {coachTipLoading ? (
     <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
   ) : (
-    <div className="mt-3 rounded-2xl bg-black/5 border  p-4 text-white/80 font-semibold text-sm leading-relaxed">
+    <div className="mt-3 rounded-2xl bg-white/5 border  p-4 text-white/80 font-semibold text-sm leading-relaxed">
       {coachTip ?? "Log a game to see advice"}
     </div>
         )}
