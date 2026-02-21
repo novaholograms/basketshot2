@@ -356,30 +356,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Shot Analysis Cards */}
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <ShotAnalysisCard
-                title="Jumpshot"
-                subtitle="3PT"
-                lastScore={home3ptLast}
-                sparklineScores={home3ptScores}
-                onClick={() => {
-                  setSelectedShotType("3pt");
-                  setCurrentView("shot-analyses-list");
-                }}
-              />
-              <ShotAnalysisCard
-                title="Free Throw"
-                subtitle="FT"
-                lastScore={homeFtLast}
-                sparklineScores={homeFtScores}
-                onClick={() => {
-                  setSelectedShotType("ft");
-                  setCurrentView("shot-analyses-list");
-                }}
-              />
-            </div>
-
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-4 mt-4">
               <StatCard
@@ -402,6 +378,57 @@ const App: React.FC = () => {
             </div>
 
             <TrendingCarousel onSelect={handleTrendingSelect} />
+
+            {/* Shot scores (debajo de Trending Drills, encima de Analyze your Shot) */}
+            <div className="mt-4 space-y-3">
+              {/* Fila 1: puntuaciones */}
+              <div className="grid grid-cols-2 gap-3">
+                <ShotAnalysisCard
+                  variant="score"
+                  label="JUMPSHOT"
+                  lastScore={home3ptLast}
+                  sparklineScores={home3ptScores}
+                  onClick={() => {
+                    setSelectedShotType("3pt");
+                    setCurrentView("shot-analyses-list");
+                  }}
+                />
+                <ShotAnalysisCard
+                  variant="score"
+                  label="FREE THROW"
+                  lastScore={homeFtLast}
+                  sparklineScores={homeFtScores}
+                  onClick={() => {
+                    setSelectedShotType("ft");
+                    setCurrentView("shot-analyses-list");
+                  }}
+                />
+              </div>
+
+              {/* Fila 2: trends (gráficos) */}
+              <div className="grid grid-cols-2 gap-3">
+                <ShotAnalysisCard
+                  variant="trend"
+                  label="JUMPSHOT"
+                  lastScore={home3ptLast}
+                  sparklineScores={home3ptScores}
+                  onClick={() => {
+                    setSelectedShotType("3pt");
+                    setCurrentView("shot-analyses-list");
+                  }}
+                />
+                <ShotAnalysisCard
+                  variant="trend"
+                  label="FREE THROW"
+                  lastScore={homeFtLast}
+                  sparklineScores={homeFtScores}
+                  onClick={() => {
+                    setSelectedShotType("ft");
+                    setCurrentView("shot-analyses-list");
+                  }}
+                />
+              </div>
+            </div>
 
             <ActionBanner onClick={() => setCurrentView('form')} />
 
