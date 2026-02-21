@@ -96,8 +96,10 @@ const App: React.FC = () => {
     const sumAccuracy = validSessions.reduce((acc, curr) => acc + curr.accuracy, 0);
     const baseAvgAccuracy = validSessions.length > 0 ? Math.round(sumAccuracy / validSessions.length) : 0;
 
-    // Base time calculation
-    const baseTotalTime = baseSessions * 20; // Avg 20 min per session
+    const baseTotalTime = sessions.reduce(
+      (acc, s) => acc + (typeof s.duration === 'number' ? s.duration : 20),
+      0
+    );
 
     // Apply mock multipliers to simulate different time ranges
     let multiplier = 1;
@@ -114,7 +116,7 @@ const App: React.FC = () => {
     return {
       accuracy: Math.min(100, Math.max(0, baseAvgAccuracy + accuracyModifier)),
       sessionsCompleted: timeRange === 'today' ? 3 : baseSessions * multiplier,
-      totalTime: timeRange === 'today' ? 45 : baseTotalTime * multiplier
+      totalTime: Math.round(baseTotalTime * multiplier)
     };
   }, [sessions, timeRange]);
 
@@ -165,7 +167,8 @@ const App: React.FC = () => {
       title: data.title,
       timestamp: 'JUST NOW',
       score: scoreDisplay,
-      accuracy: accuracy
+      accuracy: accuracy,
+      duration: data.duration
     };
 
     setSessions(prev => [newSession, ...prev]);

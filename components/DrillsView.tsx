@@ -94,6 +94,8 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showDrillInfo, setShowDrillInfo] = useState(false);
   const [isWorkoutComplete, setIsWorkoutComplete] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [completedMinutes, setCompletedMinutes] = useState(0);
 
   // Workout Stats Input
   const [shotsMade, setShotsMade] = useState<string>('');
@@ -274,8 +276,12 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     setIsEditing(false);
     setIsWorkoutComplete(false);
     setShotsMade('');
-    
-    // Auto-fill attempts if there is a target
+    setCompletedSteps(new Set());
+    setCompletedMinutes(0);
+    setActiveDrillIndex(null);
+    setTimeLeft(0);
+    setIsTimerRunning(false);
+
     if (details.targetShots) {
         setShotsAttempted(details.targetShots.toString());
     } else {
@@ -353,6 +359,11 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     setIsWorkoutComplete(false);
     setShotsMade('');
     setShotsAttempted('');
+    setCompletedSteps(new Set());
+    setCompletedMinutes(0);
+    setActiveDrillIndex(null);
+    setTimeLeft(0);
+    setIsTimerRunning(false);
   };
 
   const getFilteredWorkouts = () => {
@@ -469,12 +480,41 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     });
   };
 
+  const selectDrillPaused = (index: number) => {
+    if (!activeWorkout) return;
+    setActiveDrillIndex(index);
+    setTimeLeft(activeWorkout.steps[index].duration * 60);
+    setIsTimerRunning(false);
+    setShowDrillInfo(false);
+  };
+
+  const markStepCompleted = (index: number) => {
+    if (!activeWorkout) return;
+
+    setCompletedSteps((prev) => {
+      const next = new Set(prev);
+      if (!next.has(index)) {
+        next.add(index);
+        setCompletedMinutes((m) => m + (activeWorkout.steps[index]?.duration ?? 0));
+      }
+      return next;
+    });
+
+    setIsTimerRunning(false);
+
+    if (index < activeWorkout.steps.length - 1) {
+      selectDrillPaused(index + 1);
+    } else {
+      setActiveDrillIndex(null);
+      setIsWorkoutComplete(true);
+    }
+  };
+
   const handleNextDrill = () => {
     if (activeWorkout && activeDrillIndex !== null) {
       if (activeDrillIndex < activeWorkout.steps.length - 1) {
-        startDrill(activeDrillIndex + 1);
+        selectDrillPaused(activeDrillIndex + 1);
       } else {
-        // Workout Finished
         setActiveDrillIndex(null);
         setIsTimerRunning(false);
         setIsWorkoutComplete(true);
@@ -484,7 +524,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
   const handlePrevDrill = () => {
     if (activeWorkout && activeDrillIndex !== null && activeDrillIndex > 0) {
-        startDrill(activeDrillIndex - 1);
+      selectDrillPaused(activeDrillIndex - 1);
     }
   };
 
@@ -506,7 +546,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
     const data = {
       title: activeWorkout.title,
-      duration: activeWorkout.totalDuration,
+      duration: completedMinutes > 0 ? completedMinutes : activeWorkout.totalDuration,
       shotsMade: !isNaN(made) ? made : undefined,
       shotsAttempted: !isNaN(attempts) ? attempts : undefined
     };
@@ -524,11 +564,14 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       interval = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && isTimerRunning) {
       setIsTimerRunning(false);
+      if (activeWorkout && activeDrillIndex !== null) {
+        markStepCompleted(activeDrillIndex);
+      }
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, timeLeft]);
+  }, [isTimerRunning, timeLeft, activeWorkout, activeDrillIndex]);
 
 
   // --- AI Handlers ---
@@ -964,8 +1007,16 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                     </>
                 )}
                 
-                <button 
-                    onClick={() => setActiveWorkout(null)}
+                <button
+                    onClick={() => {
+                      setActiveWorkout(null);
+                      setIsTimerRunning(false);
+                      setActiveDrillIndex(null);
+                      setTimeLeft(0);
+                      setCompletedSteps(new Set());
+                      setCompletedMinutes(0);
+                      setIsWorkoutComplete(false);
+                    }}
                     className="absolute top-4 left-6 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/60 z-20"
                 >
                     <ArrowLeft size={20} />
@@ -1071,14 +1122,17 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
                     {activeWorkout.steps.map((step, idx) => {
                         const isActiveStep = activeDrillIndex === idx;
+                        const isDone = completedSteps.has(idx);
                         return (
                         <div key={idx} className={`relative ${!isEditing ? 'pl-10' : ''} pb-6 last:pb-0`}>
                             {!isEditing && (
                                 <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-background flex items-center justify-center z-10
-                                    ${isActiveStep ? 'bg-primary text-black ring-2 ring-primary/50' :
+                                    ${isDone ? 'bg-green-500 text-white' :
+                                    isActiveStep ? 'bg-primary text-black ring-2 ring-primary/50' :
                                     step.type === 'warmup' ? 'bg-blue-500 text-white' :
                                     step.type === 'cooldown' ? 'bg-green-600 text-white' : 'bg-primary/40 text-white'}`}>
-                                    {isActiveStep ? <Play size={14} fill="currentColor" /> :
+                                    {isDone ? <CheckCircle2 size={16} /> :
+                                    isActiveStep ? <Play size={14} fill="currentColor" /> :
                                     step.type === 'warmup' ? <Activity size={16} /> :
                                     step.type === 'cooldown' ? <CheckCircle2 size={16} /> : <Zap size={16} fill="currentColor" />}
                                 </div>
@@ -1087,9 +1141,8 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                             <div
                                 onClick={() => !isEditing && startDrill(idx)}
                                 className={`p-4 rounded-2xl border transition-all group flex items-center justify-between
-                                    ${isActiveStep
-                                        ? 'bg-primary/10 border-primary/40'
-                                        : 'bg-surface border-white/5'}
+                                    ${isDone ? 'bg-green-500/5 border-green-500/20 opacity-60' :
+                                    isActiveStep ? 'bg-primary/10 border-primary/40' : 'bg-surface border-white/5'}
                                     ${!isEditing ? 'cursor-pointer hover:border-primary/50 active:scale-[0.99]' : ''}`}
                             >
                                 <div className="flex-1">
@@ -1183,45 +1236,60 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
             </div>
 
             {/* FIXED ACTION BUTTON */}
-            <div className="fixed bottom-[160px] left-0 right-0 px-6 pt-6 pb-2 bg-gradient-to-t from-background via-background to-transparent z-30 max-w-md mx-auto pointer-events-none">
-                <div className="pointer-events-auto">
-                    {isEditing ? (
-                        <button 
-                            onClick={() => setIsEditing(false)}
-                            className="w-full bg-surface text-white border border-white/10 font-extrabold text-lg py-5 rounded-3xl hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Save size={20} />
-                            Save Changes
-                        </button>
-                    ) : (
-                        shotsMade ? (
-                            <button 
-                                onClick={finishWorkout}
-                                className="w-full bg-white text-black font-extrabold text-lg py-5 rounded-3xl hover:bg-gray-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg"
-                            >
-                                <Save size={20} className="text-black" />
-                                Finish & Save
-                            </button>
-                        ) : activeDrillIndex !== null ? (
+            {(() => {
+                const hasStarted = activeDrillIndex !== null || completedSteps.size > 0;
+                return (
+                <div className={`fixed bottom-[160px] left-0 right-0 px-6 pt-6 pb-2 bg-gradient-to-t from-background via-background to-transparent z-30 max-w-md mx-auto pointer-events-none transition-transform duration-300 ease-out ${hasStarted ? '-translate-y-0' : 'translate-y-6'}`}>
+                    <div className="pointer-events-auto">
+                        {isEditing ? (
                             <button
-                                onClick={toggleTimer}
-                                className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                onClick={() => setIsEditing(false)}
+                                className="w-full bg-surface text-white border border-white/10 font-extrabold text-lg py-5 rounded-3xl hover:bg-white/5 transition-all flex items-center justify-center gap-2"
                             >
-                                {isTimerRunning ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-                                {isTimerRunning ? 'Pause' : 'Resume'}
+                                <Save size={20} />
+                                Save Changes
                             </button>
                         ) : (
-                            <button
-                                onClick={() => startDrill(0)}
-                                className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                            >
-                                <Play size={20} fill="currentColor" />
-                                Start Workout
-                            </button>
-                        )
-                    )}
+                            shotsMade ? (
+                                <button
+                                    onClick={finishWorkout}
+                                    className="w-full bg-white text-black font-extrabold text-lg py-5 rounded-3xl hover:bg-gray-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg"
+                                >
+                                    <Save size={20} className="text-black" />
+                                    Finish & Save
+                                </button>
+                            ) : activeDrillIndex !== null ? (
+                                <>
+                                    <button
+                                        onClick={toggleTimer}
+                                        className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    >
+                                        {isTimerRunning ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                                        {isTimerRunning ? 'Pause' : 'Resume'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => markStepCompleted(activeDrillIndex)}
+                                        className="mt-3 w-full bg-white/5 border border-white/10 text-white font-extrabold text-sm py-3 rounded-2xl hover:bg-white/10 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    >
+                                        <CheckCircle2 size={18} className="text-green-400" />
+                                        Mark exercise as completed
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => startDrill(0)}
+                                    className="w-full bg-primary text-black font-extrabold text-lg py-5 rounded-3xl shadow-[0_0_20px_rgba(249,128,6,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                >
+                                    <Play size={20} fill="currentColor" />
+                                    Start Workout
+                                </button>
+                            )
+                        )}
+                    </div>
                 </div>
-            </div>
+                );
+            })()}
         </div>
     );
   };

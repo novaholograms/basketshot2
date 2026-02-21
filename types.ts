@@ -15,6 +15,7 @@ export interface Session {
   timestamp: string;
   score: string;
   accuracy: number;
+  duration?: number;
 }
 
 export interface Stat {
