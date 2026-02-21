@@ -95,7 +95,14 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
   const [showDrillInfo, setShowDrillInfo] = useState(false);
   const [isWorkoutComplete, setIsWorkoutComplete] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [completedMinutes, setCompletedMinutes] = useState(0);
+  const lastAutoCompletedKeyRef = React.useRef<string | null>(null);
+
+  const computedCompletedMinutes = React.useMemo(() => {
+    if (!activeWorkout) return 0;
+    return Array.from(completedSteps).reduce((sum, idx) => {
+      return sum + (activeWorkout.steps[idx]?.duration ?? 0);
+    }, 0);
+  }, [activeWorkout, completedSteps]);
 
   // Workout Stats Input
   const [shotsMade, setShotsMade] = useState<string>('');
@@ -277,7 +284,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     setIsWorkoutComplete(false);
     setShotsMade('');
     setCompletedSteps(new Set());
-    setCompletedMinutes(0);
+    lastAutoCompletedKeyRef.current = null;
     setActiveDrillIndex(null);
     setTimeLeft(0);
     setIsTimerRunning(false);
@@ -360,7 +367,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     setShotsMade('');
     setShotsAttempted('');
     setCompletedSteps(new Set());
-    setCompletedMinutes(0);
+    lastAutoCompletedKeyRef.current = null;
     setActiveDrillIndex(null);
     setTimeLeft(0);
     setIsTimerRunning(false);
@@ -470,6 +477,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       dbgWarn("startDrill ABORT: step missing", { stepsLen: activeWorkout?.steps?.length });
       return;
     }
+    lastAutoCompletedKeyRef.current = null;
     setActiveDrillIndex(index);
     setTimeLeft(activeWorkout.steps[index].duration * 60);
     setIsTimerRunning(true);
@@ -493,10 +501,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
     setCompletedSteps((prev) => {
       const next = new Set(prev);
-      if (!next.has(index)) {
-        next.add(index);
-        setCompletedMinutes((m) => m + (activeWorkout.steps[index]?.duration ?? 0));
-      }
+      next.add(index);
       return next;
     });
 
@@ -546,7 +551,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
     const data = {
       title: activeWorkout.title,
-      duration: completedMinutes > 0 ? completedMinutes : activeWorkout.totalDuration,
+      duration: computedCompletedMinutes > 0 ? computedCompletedMinutes : activeWorkout.totalDuration,
       shotsMade: !isNaN(made) ? made : undefined,
       shotsAttempted: !isNaN(attempts) ? attempts : undefined
     };
@@ -564,10 +569,18 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       interval = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0 && isTimerRunning) {
-      setIsTimerRunning(false);
+    } else if (timeLeft === 0) {
       if (activeWorkout && activeDrillIndex !== null) {
-        markStepCompleted(activeDrillIndex);
+        const key = `${activeWorkout.title}:${activeDrillIndex}`;
+        if (lastAutoCompletedKeyRef.current !== key) {
+          lastAutoCompletedKeyRef.current = key;
+          setIsTimerRunning(false);
+          markStepCompleted(activeDrillIndex);
+        } else {
+          setIsTimerRunning(false);
+        }
+      } else {
+        setIsTimerRunning(false);
       }
     }
     return () => clearInterval(interval);
@@ -1014,7 +1027,7 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                       setActiveDrillIndex(null);
                       setTimeLeft(0);
                       setCompletedSteps(new Set());
-                      setCompletedMinutes(0);
+                      lastAutoCompletedKeyRef.current = null;
                       setIsWorkoutComplete(false);
                     }}
                     className="absolute top-4 left-6 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/60 z-20"

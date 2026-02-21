@@ -97,7 +97,7 @@ const App: React.FC = () => {
     const baseAvgAccuracy = validSessions.length > 0 ? Math.round(sumAccuracy / validSessions.length) : 0;
 
     const baseTotalTime = sessions.reduce(
-      (acc, s) => acc + (typeof s.duration === 'number' ? s.duration : 20),
+      (acc, s) => acc + (typeof s.duration === 'number' ? s.duration : 0),
       0
     );
 
