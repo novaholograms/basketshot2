@@ -267,7 +267,8 @@ return (
         <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Coach tip</div>
         <div className="mt-3 h-14 rounded-2xl bg-white/5 flex items-center px-4">
           <span className="text-sm text-white/30 font-extrabold">Coming soon…</span>
-        
+        </div>
+      </div>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
         <div className="flex items-center justify-between mb-4">
