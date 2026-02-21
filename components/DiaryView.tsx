@@ -6,6 +6,7 @@ import {
   updateDiaryEntry,
   deleteDiaryEntry,
 } from "../services/diaryService";
+import { fetchCoachTip } from "../services/diaryCoachTip";
 import type { GameResult, DiaryEntryRow } from "../types";
 
 type DiaryEntry = DiaryEntryRow;
@@ -70,11 +71,11 @@ function badgeForResult(result?: GameResult | null) {
   return { label: "—", cls: "bg-white/10 text-white/60 border-white/10" };
 }
 
-function dotColorForResult(result?: GameResult | null) {
-  if (result === "win") return "bg-emerald-400";
-  if (result === "loss") return "bg-red-400";
-  if (result === "draw" || result === "not_finished") return "bg-orange-400";
-  return "bg-transparent";
+function dayBgForResult(result?: GameResult | null) {
+  if (result === "win") return "bg-emerald-500/20 border-emerald-500/40 text-white";
+  if (result === "loss") return "bg-red-500/20 border-red-500/40 text-white";
+  if (result === "draw" || result === "not_finished") return "bg-orange-500/20 border-orange-500/40 text-white";
+  return "bg-white/0 border-white/10 text-white/80";
 }
 
 function computeBestResultForDay(dayEntries: DiaryEntry[]): DiaryEntry | null {
@@ -111,6 +112,12 @@ export const DiaryView: React.FC = () => {
 
   const [showDetail, setShowDetail] = useState(false);
   const [detailEntry, setDetailEntry] = useState<DiaryEntry | null>(null);
+
+  const [showDayPreview, setShowDayPreview] = useState(false);
+  const [dayPreviewDate, setDayPreviewDate] = useState<string | null>(null);
+
+  const [coachTip, setCoachTip] = useState<string | null>(null);
+  const [coachTipLoading, setCoachTipLoading] = useState(false);
 
   const filteredEntries = useMemo(() => {
     let list = [...entries];
@@ -165,6 +172,13 @@ export const DiaryView: React.FC = () => {
     return cells;
   }, [monthCursor]);
 
+  const dayPreviewEntries = useMemo(() => {
+    if (!dayPreviewDate) return [];
+    return (entriesByDate.get(dayPreviewDate) ?? [])
+      .slice()
+      .sort((a, b) => (b.entry_date || "").localeCompare(a.entry_date || ""));
+  }, [dayPreviewDate, entriesByDate]);
+
   async function load() {
     if (!userId) return;
     setLoading(true);
@@ -179,6 +193,24 @@ export const DiaryView: React.FC = () => {
   useEffect(() => {
     load();
   }, [userId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!userId) return;
+      setCoachTipLoading(true);
+      try {
+        const tip = await fetchCoachTip(userId, entries.slice(0, 20));
+        if (!cancelled) setCoachTip(tip);
+      } finally {
+        if (!cancelled) setCoachTipLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, entries]);
 
   function openCreateWizard() {
     setWizardMode("create");
@@ -199,6 +231,12 @@ export const DiaryView: React.FC = () => {
     setShowDetail(true);
   }
 
+  function openDayPreview(dateIso: string) {
+    setSelectedDate(dateIso);
+    setDayPreviewDate(dateIso);
+    setShowDayPreview(true);
+  }
+
   async function handleDelete(entry: DiaryEntry) {
     await deleteDiaryEntry(entry.id);
     setShowDetail(false);
@@ -206,47 +244,47 @@ export const DiaryView: React.FC = () => {
     await load();
   }
 
-
-  
- return (
+  return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Your diary</div>
           <h1 className="text-2xl font-extrabold text-white">Diary</h1>
         </div>
-        <button
-          type="button"
-          onClick={openCreateWizard}
-          className="rounded-2xl bg-primary px-4 py-3 text-sm font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-95 transition-transform"
-        >
-          Log a game
-        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2 rounded-3xl bg-surface p-8 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Avg points</div>
+        <div className="col-span-2 rounded-3xl bg-surface p-8 border border-white/5 flex flex-col items-center justify-center text-center">
+          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">AVG POINTS</div>
           <div className="mt-3 text-7xl font-extrabold text-white leading-none">{stats.avgPoints}</div>
         </div>
-        <div className="rounded-3xl bg-surface p-6 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Rebounds</div>
+        <div className="rounded-3xl bg-surface p-6 border border-white/5 flex flex-col items-center justify-center text-center">
+          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">REBOUNDS</div>
           <div className="mt-3 text-4xl font-extrabold text-white leading-none">{stats.avgReb}</div>
         </div>
-        <div className="rounded-3xl bg-surface p-6 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Assists</div>
+        <div className="rounded-3xl bg-surface p-6 border border-white/5 flex flex-col items-center justify-center text-center">
+          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">ASSISTS</div>
           <div className="mt-3 text-4xl font-extrabold text-white leading-none">{stats.avgAst}</div>
         </div>
       </div>
 
-
-      
+      <button
+        type="button"
+        onClick={openCreateWizard}
+        className="w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform"
+      >
+        Log a game
+      </button>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
         <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Coach tip</div>
-        <div className="mt-3 h-14 rounded-2xl bg-white/5 flex items-center px-4">
-          <span className="text-sm text-white/30 font-extrabold">Coming soon…</span>
-        </div>
+        {coachTipLoading ? (
+          <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
+        ) : (
+          <div className="mt-3 rounded-2xl bg-white/5 border border-white/10 p-4 text-white/80 font-semibold text-sm leading-relaxed">
+            {coachTip ?? "Log a game to see advice"}
+          </div>
+        )}
       </div>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
@@ -284,27 +322,27 @@ export const DiaryView: React.FC = () => {
             const dayEntries = entriesByDate.get(cell.iso) ?? [];
             const best = computeBestResultForDay(dayEntries);
             const isSelected = selectedDate === cell.iso;
-            const dotColor = best?.result ? dotColorForResult(best.result) : "bg-transparent";
+            const colorCls = dayBgForResult(best?.result);
 
             return (
               <button
                 key={idx}
                 type="button"
-                onClick={() => setSelectedDate((v) => (v === cell.iso ? null : cell.iso!))}
+                onClick={() => openDayPreview(cell.iso!)}
                 className={[
-                  "h-10 rounded-2xl border text-sm font-extrabold flex flex-col items-center justify-center gap-0.5 transition-colors",
-                  isSelected
-                    ? "bg-primary/10 border-primary/30 text-white"
-                    : "bg-white/0 border-white/10 text-white/80 hover:border-white/20",
+                  "h-10 rounded-2xl border text-sm font-extrabold flex items-center justify-center transition-colors",
+                  colorCls,
+                  isSelected ? "ring-2 ring-primary" : "",
                 ].join(" ")}
               >
-                <span className="leading-none text-xs">{cell.day}</span>
-                <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                {cell.day}
               </button>
             );
           })}
         </div>
       </div>
+
+      <div className="text-base font-extrabold text-white/80 tracking-wide">Match history</div>
 
       <div className="flex items-center gap-2 flex-wrap">
         {(["all", "7d", "30d"] as const).map((id) => (
@@ -323,9 +361,13 @@ export const DiaryView: React.FC = () => {
           </button>
         ))}
         {selectedDate && (
-          <div className="ml-auto text-xs font-extrabold uppercase tracking-[0.2em] text-white/40">
-            {selectedDate}
-          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedDate(null)}
+            className="ml-auto text-xs font-extrabold uppercase tracking-[0.2em] text-white/40"
+          >
+            {selectedDate} ✕
+          </button>
         )}
       </div>
 
@@ -369,6 +411,65 @@ export const DiaryView: React.FC = () => {
           );
         })}
       </div>
+
+      {showDayPreview && dayPreviewDate && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end" onClick={() => setShowDayPreview(false)}>
+          <div
+            className="w-full max-w-md mx-auto rounded-t-[28px] bg-background border-t border-white/10 p-6 pb-8"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Day preview</div>
+                <div className="mt-1 text-lg font-extrabold text-white">{dayPreviewDate}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDayPreview(false)}
+                className="h-10 w-10 rounded-2xl bg-white/5 border border-white/10 text-white/80 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {dayPreviewEntries.length === 0 && (
+                <div className="rounded-3xl bg-surface border border-white/5 p-5 text-white/70 text-sm font-extrabold text-center">
+                  No games for this day.
+                </div>
+              )}
+
+              {dayPreviewEntries.map((e) => {
+                const b = badgeForResult(e.result ?? null);
+                return (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={() => {
+                      setShowDayPreview(false);
+                      openDetail(e);
+                    }}
+                    className="w-full text-left rounded-3xl bg-surface border border-white/5 p-5 active:scale-[0.99] transition-transform"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-2xl text-xs font-extrabold border ${b.cls}`}>{b.label}</span>
+                        {e.score_manual ? <span className="text-sm text-white/50">{e.score_manual}</span> : null}
+                      </div>
+                      <span className="text-white/30">›</span>
+                    </div>
+                    <div className="mt-3 flex items-center gap-4 text-sm text-white/60">
+                      <span><span className="font-extrabold text-white">{e.points ?? 0}</span> PTS</span>
+                      <span><span className="font-extrabold text-white">{e.rebounds ?? 0}</span> REB</span>
+                      <span><span className="font-extrabold text-white">{e.assists ?? 0}</span> AST</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDetail && detailEntry && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-end" onClick={() => setShowDetail(false)}>
@@ -481,13 +582,6 @@ export const DiaryView: React.FC = () => {
   );
 };
 
-const RESULT_OPTIONS = [
-  { id: "win" as const, label: "Win", activeCls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" },
-  { id: "loss" as const, label: "Loss", activeCls: "border-red-500/40 bg-red-500/10 text-red-300" },
-  { id: "draw" as const, label: "Draw", activeCls: "border-orange-500/40 bg-orange-500/10 text-orange-300" },
-  { id: "not_finished" as const, label: "Not finished", activeCls: "border-white/20 bg-white/5 text-white/70" },
-] as const;
-
 function DiaryWizard({
   userId,
   mode,
@@ -586,200 +680,225 @@ function DiaryWizard({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pt-6 pb-32">
-        {step === 1 && (
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 1</div>
-              <div className="text-2xl font-extrabold text-white mt-1">When was the game?</div>
+        <div key={step} className="animate-in fade-in slide-in-from-right-4 duration-200">
+          {step === 1 && (
+            <div className="space-y-5">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 1</div>
+                <div className="text-2xl font-extrabold text-white mt-1">When was the game?</div>
+              </div>
+              <div className="rounded-3xl bg-surface border border-white/5 p-6">
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-lg font-extrabold text-white focus:outline-none focus:border-primary/40"
+                />
+              </div>
             </div>
-            <div className="rounded-3xl bg-surface border border-white/5 p-6">
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-lg font-extrabold text-white focus:outline-none focus:border-primary/40"
-              />
-            </div>
-          </div>
-        )}
+          )}
 
-        {step === 2 && (
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 2</div>
-              <div className="text-2xl font-extrabold text-white mt-1">What was the result?</div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {RESULT_OPTIONS.map((opt) => (
+          {step === 2 && (
+            <div className="space-y-5">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 2</div>
+                <div className="text-2xl font-extrabold text-white mt-1">What was the result?</div>
+              </div>
+              <div className="flex flex-col gap-3">
                 <button
-                  key={opt.id}
                   type="button"
-                  onClick={() => setResult(opt.id)}
+                  onClick={() => setResult("win")}
                   className={[
-                    "rounded-3xl border p-5 text-left transition-colors",
-                    result === opt.id ? opt.activeCls : "bg-surface border-white/10 text-white/80",
+                    "rounded-3xl border p-6 text-left transition-colors",
+                    result === "win"
+                      ? "bg-emerald-500/20 border-emerald-500/40 text-white"
+                      : "bg-surface border-white/10 text-white/80",
                   ].join(" ")}
                 >
-                  <div className="text-base font-extrabold">{opt.label}</div>
+                  <div className="text-lg font-extrabold">Win</div>
                 </button>
-              ))}
-            </div>
-            <div className="rounded-3xl bg-surface border border-white/5 p-6">
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-white/40">Score (optional)</div>
-              <input
-                value={scoreManual}
-                onChange={(e) => setScoreManual(e.target.value)}
-                placeholder='e.g. "92–88"'
-                className="mt-3 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-base font-extrabold text-white placeholder:text-white/25 focus:outline-none focus:border-primary/40"
-              />
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 3</div>
-              <div className="text-2xl font-extrabold text-white mt-1">Your stats</div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Points", v: points, set: setPoints },
-                { label: "Rebounds", v: rebounds, set: setRebounds },
-                { label: "Assists", v: assists, set: setAssists },
-              ].map((f) => (
-                <div key={f.label} className="rounded-3xl bg-surface border border-white/5 p-4">
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40">{f.label}</div>
-                  <input
-                    inputMode="numeric"
-                    value={f.v}
-                    onChange={(e) => f.set(e.target.value.replace(/[^\d]/g, ""))}
-                    className="mt-3 w-full rounded-2xl bg-white/5 border border-white/10 px-2 py-4 text-center text-2xl font-extrabold text-white focus:outline-none focus:border-primary/40"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 4</div>
-              <div className="text-2xl font-extrabold text-white mt-1">What went best?</div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {BEST_WORST_OPTIONS.map((t) => {
-                const selected = best.includes(t);
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setBest((v) => toggle(v, t))}
-                    className={[
-                      "px-4 py-2.5 rounded-2xl text-sm font-extrabold border transition-colors",
-                      selected
-                        ? "bg-primary/10 border-primary/30 text-white"
-                        : "bg-white/0 border-white/10 text-white/70",
-                    ].join(" ")}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {step === 5 && (
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 5</div>
-              <div className="text-2xl font-extrabold text-white mt-1">What went worst?</div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {BEST_WORST_OPTIONS.map((t) => {
-                const selected = worst.includes(t);
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setWorst((v) => toggle(v, t))}
-                    className={[
-                      "px-4 py-2.5 rounded-2xl text-sm font-extrabold border transition-colors",
-                      selected
-                        ? "bg-primary/10 border-primary/30 text-white"
-                        : "bg-white/0 border-white/10 text-white/70",
-                    ].join(" ")}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {step === 6 && (
-          <div className="space-y-5">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 6</div>
-              <div className="text-2xl font-extrabold text-white mt-1">Review</div>
-            </div>
-
-            <div className="rounded-3xl bg-surface border border-white/5 p-5 space-y-5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-2xl text-xs font-extrabold border ${badgeForResult(result).cls}`}>
-                  {badgeForResult(result).label}
-                </span>
-                <span className="text-white font-extrabold text-sm">{date}</span>
-                {scoreManual.trim() ? <span className="text-white/60 text-sm">{scoreManual.trim()}</span> : null}
+                <button
+                  type="button"
+                  onClick={() => setResult("draw")}
+                  className={[
+                    "rounded-3xl border p-6 text-left transition-colors",
+                    result === "draw" || result === "not_finished"
+                      ? "bg-orange-500/20 border-orange-500/40 text-white"
+                      : "bg-surface border-white/10 text-white/80",
+                  ].join(" ")}
+                >
+                  <div className="text-lg font-extrabold">Draw / Not finished</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResult("loss")}
+                  className={[
+                    "rounded-3xl border p-6 text-left transition-colors",
+                    result === "loss"
+                      ? "bg-red-500/20 border-red-500/40 text-white"
+                      : "bg-surface border-white/10 text-white/80",
+                  ].join(" ")}
+                >
+                  <div className="text-lg font-extrabold">Loss</div>
+                </button>
               </div>
+              <div className="rounded-3xl bg-surface border border-white/5 p-6">
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-white/40">Score (optional)</div>
+                <input
+                  value={scoreManual}
+                  onChange={(e) => setScoreManual(e.target.value)}
+                  placeholder='e.g. "92–88"'
+                  className="mt-3 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-base font-extrabold text-white placeholder:text-white/25 focus:outline-none focus:border-primary/40"
+                />
+              </div>
+            </div>
+          )}
 
+          {step === 3 && (
+            <div className="space-y-5">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 3</div>
+                <div className="text-2xl font-extrabold text-white mt-1">Your stats</div>
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "PTS", val: clampInt(points) ?? 0 },
-                  { label: "REB", val: clampInt(rebounds) ?? 0 },
-                  { label: "AST", val: clampInt(assists) ?? 0 },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
-                    <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40">{s.label}</div>
-                    <div className="mt-1 text-2xl font-extrabold text-white">{s.val}</div>
+                  { label: "Points", v: points, set: setPoints },
+                  { label: "Rebounds", v: rebounds, set: setRebounds },
+                  { label: "Assists", v: assists, set: setAssists },
+                ].map((f) => (
+                  <div key={f.label} className="rounded-3xl bg-surface border border-white/5 p-4">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40">{f.label}</div>
+                    <input
+                      inputMode="numeric"
+                      value={f.v}
+                      onChange={(e) => f.set(e.target.value.replace(/[^\d]/g, ""))}
+                      className="mt-3 w-full rounded-2xl bg-white/5 border border-white/10 px-2 py-4 text-center text-2xl font-extrabold text-white focus:outline-none focus:border-primary/40"
+                    />
                   </div>
                 ))}
               </div>
+            </div>
+          )}
 
+          {step === 4 && (
+            <div className="space-y-5">
               <div>
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40 mb-2">Best</div>
-                <div className="flex flex-wrap gap-2">
-                  {best.length ? best.map((t) => (
-                    <span key={t} className="px-3 py-1 rounded-2xl bg-primary/10 border border-primary/20 text-sm text-white">{t}</span>
-                  )) : <span className="text-white/40 text-sm">—</span>}
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 4</div>
+                <div className="text-2xl font-extrabold text-white mt-1">What went best?</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {BEST_WORST_OPTIONS.map((t) => {
+                  const selected = best.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setBest((v) => toggle(v, t))}
+                      className={[
+                        "rounded-2xl border px-4 py-4 text-sm font-extrabold transition-colors",
+                        selected
+                          ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200"
+                          : "bg-white/0 border-white/10 text-white/70",
+                      ].join(" ")}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-5">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 5</div>
+                <div className="text-2xl font-extrabold text-white mt-1">What went worst?</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {BEST_WORST_OPTIONS.map((t) => {
+                  const selected = worst.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setWorst((v) => toggle(v, t))}
+                      className={[
+                        "rounded-2xl border px-4 py-4 text-sm font-extrabold transition-colors",
+                        selected
+                          ? "bg-red-500/15 border-red-500/30 text-red-200"
+                          : "bg-white/0 border-white/10 text-white/70",
+                      ].join(" ")}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div className="space-y-5">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Step 6</div>
+                <div className="text-2xl font-extrabold text-white mt-1">Review</div>
+              </div>
+
+              <div className="rounded-3xl bg-surface border border-white/5 p-5 space-y-5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-3 py-1 rounded-2xl text-xs font-extrabold border ${badgeForResult(result).cls}`}>
+                    {badgeForResult(result).label}
+                  </span>
+                  <span className="text-white font-extrabold text-sm">{date}</span>
+                  {scoreManual.trim() ? <span className="text-white/60 text-sm">{scoreManual.trim()}</span> : null}
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "PTS", val: clampInt(points) ?? 0 },
+                    { label: "REB", val: clampInt(rebounds) ?? 0 },
+                    { label: "AST", val: clampInt(assists) ?? 0 },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40">{s.label}</div>
+                      <div className="mt-1 text-2xl font-extrabold text-white">{s.val}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40 mb-2">Best</div>
+                  <div className="flex flex-wrap gap-2">
+                    {best.length ? best.map((t) => (
+                      <span key={t} className="px-3 py-1 rounded-2xl bg-primary/10 border border-primary/20 text-sm text-white">{t}</span>
+                    )) : <span className="text-white/40 text-sm">—</span>}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40 mb-2">Worst</div>
+                  <div className="flex flex-wrap gap-2">
+                    {worst.length ? worst.map((t) => (
+                      <span key={t} className="px-3 py-1 rounded-2xl bg-white/5 border border-white/10 text-sm text-white/80">{t}</span>
+                    )) : <span className="text-white/40 text-sm">—</span>}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/40 mb-2">Worst</div>
-                <div className="flex flex-wrap gap-2">
-                  {worst.length ? worst.map((t) => (
-                    <span key={t} className="px-3 py-1 rounded-2xl bg-white/5 border border-white/10 text-sm text-white/80">{t}</span>
-                  )) : <span className="text-white/40 text-sm">—</span>}
-                </div>
+              <div className="rounded-3xl bg-surface border border-white/5 p-5">
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-white/40">How did you feel?</div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={5}
+                  placeholder="Write your thoughts about the game…"
+                  className="mt-3 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-sm font-semibold text-white placeholder:text-white/25 resize-none focus:outline-none focus:border-primary/40"
+                />
               </div>
             </div>
-
-            <div className="rounded-3xl bg-surface border border-white/5 p-5">
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-white/40">How did you feel?</div>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={5}
-                placeholder="Write your thoughts about the game…"
-                className="mt-3 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-sm font-semibold text-white placeholder:text-white/25 resize-none focus:outline-none focus:border-primary/40"
-              />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex-shrink-0 absolute bottom-0 left-0 right-0 max-w-md mx-auto px-6 pb-8 pt-4 border-t border-white/5 bg-background">
