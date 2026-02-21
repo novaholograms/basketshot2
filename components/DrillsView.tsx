@@ -1125,33 +1125,47 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       {/* Grid */}
       <div className="grid grid-cols-2 gap-4">
         {getFilteredWorkouts().length > 0 ? (
-          getFilteredWorkouts().map((workout, index) => (
-            <div 
-              key={index}
-              onClick={() => handlePresetClick(workout)}
-              className="relative aspect-square rounded-3xl overflow-hidden border border-white/5 group cursor-pointer"
-            >
-              <img 
-                src={workout.image} 
-                alt={workout.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-              
-              <div className="absolute top-3 right-3">
-                 <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
-                    {workout.intensity}
-                 </span>
-              </div>
+          (() => {
+            const completedMap = readCompletedWorkouts();
+            return getFilteredWorkouts().map((workout, index) => {
+              const wKey = getWorkoutKey({ title: workout.title });
+              const isDoneToday = completedMap[wKey]?.date === todayKey();
+              return (
+                <div
+                  key={index}
+                  onClick={() => handlePresetClick(workout)}
+                  className="relative aspect-square rounded-3xl overflow-hidden border border-white/5 group cursor-pointer"
+                >
+                  <img
+                    src={workout.image}
+                    alt={workout.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
 
-              <div className="absolute bottom-0 left-0 p-4 w-full">
-                <span className="text-[10px] text-primary font-bold uppercase tracking-wider mb-1 block">
-                    {workout.duration}
-                </span>
-                <h4 className="text-sm font-extrabold leading-tight">{workout.title}</h4>
-              </div>
-            </div>
-          ))
+                  {isDoneToday && (
+                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider shadow-lg z-10">
+                      <CheckCircle2 size={10} />
+                      Done
+                    </div>
+                  )}
+
+                  <div className="absolute top-3 right-3">
+                     <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+                        {workout.intensity}
+                     </span>
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 p-4 w-full">
+                    <span className="text-[10px] text-primary font-bold uppercase tracking-wider mb-1 block">
+                        {workout.duration}
+                    </span>
+                    <h4 className="text-sm font-extrabold leading-tight">{workout.title}</h4>
+                  </div>
+                </div>
+              );
+            });
+          })()
         ) : (
           <div className="col-span-2 py-12 text-center">
              <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1178,6 +1192,9 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     if (!activeWorkout) return null;
 
     const isCustom = activeWorkout.category === 'Custom';
+    const completedMap = readCompletedWorkouts();
+    const activeKey = getWorkoutKey(activeWorkout);
+    const isDoneToday = completedMap[activeKey]?.date === todayKey();
 
     return (
         <div className="animate-in slide-in-from-right duration-300 relative bg-background min-h-full pb-44">
@@ -1234,13 +1251,19 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
                 </div>
 
                 <div className={`${isCustom ? 'px-6' : 'absolute bottom-0 left-0 p-6 w-full'}`}>
-                    <div className="flex gap-2 mb-3">
+                    <div className="flex gap-2 mb-3 flex-wrap">
                         <span className="bg-primary text-black px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
                             {activeWorkout.intensity} Intensity
                         </span>
                         <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                             <Clock size={12} /> {activeWorkout.totalDuration} Min
                         </span>
+                        {isDoneToday && (
+                          <div className="flex items-center gap-1 bg-green-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                            <CheckCircle2 size={12} />
+                            Completed
+                          </div>
+                        )}
                     </div>
                     {isEditing ? (
                          <input
