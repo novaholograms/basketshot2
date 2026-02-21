@@ -209,7 +209,6 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
     const diff = Math.floor((now.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24));
     return Math.min(6, Math.max(0, diff));
   });
-  const didAutoLoadDefaultWorkout = useRef(false);
   const dbgIdRef = useRef<string>(`DrillsView#${Math.random().toString(36).slice(2, 8)}`);
   const dbg = (...args: any[]) => console.log(`[${dbgIdRef.current}]`, ...args);
   const dbgWarn = (...args: any[]) => console.warn(`[${dbgIdRef.current}]`, ...args);
@@ -418,25 +417,6 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
       handlePresetClick(initialWorkout);
     }
   }, [initialWorkout]);
-
-  useEffect(() => {
-    dbg("autoload check", {
-      didAutoLoad: didAutoLoadDefaultWorkout.current,
-      hasInitialWorkout: !!initialWorkout,
-      hasActiveWorkout: !!activeWorkout,
-      presetCount: PRESET_WORKOUTS?.length,
-      showAllWorkouts,
-    });
-    if (didAutoLoadDefaultWorkout.current) return;
-    if (initialWorkout) return;
-    if (activeWorkout) return;
-    if (!PRESET_WORKOUTS || PRESET_WORKOUTS.length === 0) return;
-    didAutoLoadDefaultWorkout.current = true;
-    dbg("AUTOLOAD -> handlePresetClick(PRESET_WORKOUTS[0])", {
-      title: PRESET_WORKOUTS[0]?.title,
-    });
-    handlePresetClick(PRESET_WORKOUTS[0]);
-  }, [initialWorkout, activeWorkout]);
 
   useEffect(() => {
     let mounted = true;
