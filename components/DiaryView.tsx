@@ -273,13 +273,25 @@ export const DiaryView: React.FC = () => {
     <button
   type="button"
   onClick={openCreateWizard}
-  className="w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform relative overflow-visible"
+  className="relative w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform overflow-visible"
 >
-  {/* Ola/pulse alrededor */}
-  <span className="pointer-events-none absolute inset-0 -z-10 rounded-3xl animate-ping bg-primary/30" />
-  <span className="pointer-events-none absolute inset-0 -z-10 rounded-3xl animate-pulse bg-primary/20" />
+  {/* Ola alrededor */}
+  <span className="pointer-events-none absolute -inset-2 rounded-[28px] ring-wave" />
 
   Log a game
+
+  <style>{`
+    .ring-wave {
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.22);
+      animation: wave 1.6s ease-out infinite;
+    }
+    @keyframes wave {
+      0%   { transform: scale(1);   opacity: 0.85; }
+      70%  { transform: scale(1.08); opacity: 0.00; }
+      100% { transform: scale(1.08); opacity: 0.00; }
+    }
+  `}</style>
 </button>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
