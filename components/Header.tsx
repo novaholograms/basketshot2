@@ -8,6 +8,12 @@ const FALLBACK_AVATAR =
 export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachChat }) => {
   const { profile } = useAuth();
   const name = (profile?.full_name ?? '').trim();
+  const username =
+    (profile?.onboarding_data?.username ?? '').toString().trim() ||
+    (profile?.email ? String(profile.email).split('@')[0] : '') ||
+    'Champ';
+
+  const greetingName = name || username;
 
   return (
     <header className="flex items-center justify-between px-6 py-6 sticky top-0 bg-background/80 backdrop-blur-md z-40">
@@ -21,7 +27,7 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
         </div>
         <div>
           <h1 className="text-xl font-extrabold leading-none tracking-tight">
-            Hello, {name || 'Champ'}!
+            Hello, {greetingName}!
           </h1>
         </div>
       </div>

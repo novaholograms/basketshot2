@@ -81,7 +81,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
   const handleNext = async () => {
     if (currentStep === 0) {
       const n = fullName.trim();
-      if (n.length < 2 || n.length > 50) return;
+      if (n.length > 0 && (n.length < 2 || n.length > 50)) return;
     }
 
     if (currentStep < STEPS.length - 1) {
@@ -93,7 +93,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
       };
 
       const onboarding_data = {
-        name: fullName.trim(),
+        name: fullName.trim() || null,
         height_cm: height,
         weight_kg: weight,
         wingspan_cm: wingspan,
