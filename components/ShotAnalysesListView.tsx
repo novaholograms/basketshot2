@@ -8,6 +8,7 @@ type Props = {
   userId: string | null;
   shotType: ShotType;
   onBack: () => void;
+  onOpenAnalysis: (row: ShotAnalysisRow) => void;
 };
 
 function formatShotTitle(shotType: ShotType) {
@@ -17,17 +18,27 @@ function formatShotTitle(shotType: ShotType) {
 function formatDate(iso: string) {
   try {
     const d = new Date(iso);
-    return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return iso;
   }
 }
 
-export default function ShotAnalysesListView({ userId, shotType, onBack }: Props) {
+export default function ShotAnalysesListView({
+  userId,
+  shotType,
+  onBack,
+  onOpenAnalysis,
+}: Props) {
   const [rows, setRows] = useState<ShotAnalysisRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,111 +103,59 @@ export default function ShotAnalysesListView({ userId, shotType, onBack }: Props
         <>
           {/* Latest (destacada) */}
           {latest ? (
-            <div className="mt-4 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_14px_40px_rgba(0,0,0,0.20)]">
+            <button
+              type="button"
+              onClick={() => onOpenAnalysis(latest)}
+              className="mt-4 w-full rounded-3xl border border-white/10 bg-white/5 p-5 text-left shadow-[0_14px_40px_rgba(0,0,0,0.20)] active:scale-[0.99]"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[12px] text-white/60">Latest</div>
-                  <div className="mt-1 text-sm font-semibold text-white">{formatDate(latest.created_at)}</div>
+                  <div className="mt-1 text-sm font-semibold text-white">
+                    {formatDate(latest.created_at)}
+                  </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-black text-white leading-none">{latest.score ?? "-"}</div>
+                  <div className="text-3xl font-black text-white leading-none">
+                    {latest.score ?? "-"}
+                  </div>
                   <div className="mt-1 text-[11px] text-white/60">Score</div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setExpandedId((v) => (v === latest.id ? null : latest.id))}
-                className="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white active:scale-[0.99]"
-              >
-                {expandedId === latest.id ? "Hide details" : "View details"}
-              </button>
-
-              {expandedId === latest.id ? (
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <div className="text-[12px] font-semibold text-white">Strengths</div>
-                    <ul className="mt-2 space-y-1 text-[12px] text-white/70">
-                      {(latest.strengths ?? []).slice(0, 6).map((s, i) => (
-                        <li key={i}>• {s}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <div className="text-[12px] font-semibold text-white">Improvements</div>
-                    <ul className="mt-2 space-y-1 text-[12px] text-white/70">
-                      {(latest.improvements ?? []).slice(0, 6).map((s, i) => (
-                        <li key={i}>• {s}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {latest.ai_coach_tip ? (
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="text-[12px] font-semibold text-white">{latest.ai_coach_tip.title}</div>
-                      <div className="mt-1 text-[12px] text-white/70">{latest.ai_coach_tip.body}</div>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+              <div className="mt-4 text-[12px] text-white/60">
+                Tap to open results
+              </div>
+            </button>
           ) : null}
 
           {/* Rest (normales) */}
           <div className="mt-4 space-y-3">
-            {rest.map((r) => {
-              const isOpen = expandedId === r.id;
-              return (
-                <div key={r.id} className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedId((v) => (v === r.id ? null : r.id))}
-                    className="w-full text-left"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-white">{formatDate(r.created_at)}</div>
-                        <div className="mt-1 text-[12px] text-white/60">{isOpen ? "Tap to collapse" : "Tap to expand"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-black text-white leading-none">{r.score ?? "-"}</div>
-                        <div className="mt-1 text-[11px] text-white/60">Score</div>
-                      </div>
+            {rest.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => onOpenAnalysis(r)}
+                className="w-full rounded-3xl border border-white/10 bg-white/5 p-4 text-left active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white">
+                      {formatDate(r.created_at)}
                     </div>
-                  </button>
-
-                  {isOpen ? (
-                    <div className="mt-4 space-y-3">
-                      <div>
-                        <div className="text-[12px] font-semibold text-white">Strengths</div>
-                        <ul className="mt-2 space-y-1 text-[12px] text-white/70">
-                          {(r.strengths ?? []).slice(0, 6).map((s, i) => (
-                            <li key={i}>• {s}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <div className="text-[12px] font-semibold text-white">Improvements</div>
-                        <ul className="mt-2 space-y-1 text-[12px] text-white/70">
-                          {(r.improvements ?? []).slice(0, 6).map((s, i) => (
-                            <li key={i}>• {s}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {r.ai_coach_tip ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                          <div className="text-[12px] font-semibold text-white">{r.ai_coach_tip.title}</div>
-                          <div className="mt-1 text-[12px] text-white/70">{r.ai_coach_tip.body}</div>
-                        </div>
-                      ) : null}
+                    <div className="mt-1 text-[12px] text-white/60">
+                      Tap to open results
                     </div>
-                  ) : null}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-black text-white leading-none">
+                      {r.score ?? "-"}
+                    </div>
+                    <div className="mt-1 text-[11px] text-white/60">Score</div>
+                  </div>
                 </div>
-              );
-            })}
+              </button>
+            ))}
           </div>
         </>
       )}

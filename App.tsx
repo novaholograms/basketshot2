@@ -332,6 +332,9 @@ const App: React.FC = () => {
             userId={userId}
             shotType={(selectedShotType ?? "3pt") as "3pt" | "ft"}
             onBack={() => setCurrentView('home')}
+            onOpenAnalysis={(row) => {
+              console.log("[ShotAnalysesList] open analysis", row.id);
+            }}
           />
         );
       case 'home':

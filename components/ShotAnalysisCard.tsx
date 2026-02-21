@@ -10,6 +10,10 @@ type Props = {
   onClick: () => void;
 };
 
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
 function buildSparkPath(values: number[], w: number, h: number, pad: number) {
   const v = values.filter((n) => Number.isFinite(n)) as number[];
   if (v.length === 0) return { line: "", area: "" };
@@ -48,14 +52,22 @@ export default function ShotAnalysisCard({
     .filter((n) => typeof n === "number" && Number.isFinite(n))
     .slice(0, 5);
 
-  const trendValues = scores.slice().reverse();
+  const trendValuesDesc = scores;
+  const trendValuesOldToNewRaw = trendValuesDesc.slice().reverse();
+
+  const trendValuesOldToNew =
+    trendValuesOldToNewRaw.length === 1
+      ? [0, clamp(trendValuesOldToNewRaw[0], 0, 100)]
+      : trendValuesOldToNewRaw;
 
   const w = 220;
   const h = 56;
   const pad = 6;
-  const { line, area } = buildSparkPath(trendValues, w, h, pad);
+  const { line, area } = buildSparkPath(trendValuesOldToNew, w, h, pad);
 
   if (variant === "score") {
+    const pct = typeof lastScore === "number" ? clamp(lastScore, 0, 100) : 0;
+
     return (
       <button
         type="button"
@@ -65,7 +77,17 @@ export default function ShotAnalysisCard({
         <div className="text-4xl font-black text-white leading-none">
           {typeof lastScore === "number" ? lastScore : "-"}
         </div>
-        <div className="mt-2 text-[11px] font-black tracking-[0.22em] text-white/70">
+
+        <div className="mt-3">
+          <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white/70"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 text-[11px] font-black tracking-[0.22em] text-white/70">
           {label}
         </div>
 
