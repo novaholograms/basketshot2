@@ -76,6 +76,8 @@ export interface ShotAnalysisRow {
 
 export type ShotAnalysisInsert = Omit<ShotAnalysisRow, 'id' | 'created_at'>;
 
+export type GameResult = 'win' | 'loss' | 'draw' | 'not_finished';
+
 export type DiaryEntryRow = {
   id: string;
   user_id: string;
@@ -85,6 +87,13 @@ export type DiaryEntryRow = {
   notes: string;
   rating: number | null;
   meta: any | null;
+  result?: GameResult | null;
+  score_manual?: string | null;
+  points?: number | null;
+  rebounds?: number | null;
+  assists?: number | null;
+  best_aspects?: string[] | null;
+  worst_aspects?: string[] | null;
 };
 
 export type DiaryEntryInsert = {
@@ -94,6 +103,13 @@ export type DiaryEntryInsert = {
   notes?: string;
   rating?: number | null;
   meta?: any | null;
+  result?: GameResult | null;
+  score_manual?: string | null;
+  points?: number | null;
+  rebounds?: number | null;
+  assists?: number | null;
+  best_aspects?: string[] | null;
+  worst_aspects?: string[] | null;
 };
 
 export type DiaryEntryUpdate = Partial<Omit<DiaryEntryInsert, 'user_id'>>;
