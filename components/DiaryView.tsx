@@ -270,13 +270,13 @@ export const DiaryView: React.FC = () => {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={openCreateWizard}
-        className="w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform"
-      >
-        Log a game
-      </button>
+     <button
+  type="button"
+  onClick={openCreateWizard}
+  className="w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] border-2 border-yellow-400 active:scale-[0.99] transition-transform"
+>
+  Log a game
+</button>
 
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
         <div className="text-xs font-extrabold  tracking-[0.2em] text-muted">Coach's Advice</div>
