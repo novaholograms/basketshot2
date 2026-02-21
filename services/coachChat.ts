@@ -11,6 +11,11 @@ export async function sendCoachChat(messages: ChatMsg[], context: string): Promi
     return "Please sign in to use AI Coach.";
   }
 
+const { data: s } = await supabase.auth.getSession();
+console.log("[coach-chat] session?", !!s.session);
+console.log("[coach-chat] token?", s.session?.access_token?.slice(0, 12));
+
+  
   const { data, error } = await supabase.functions.invoke("coach-chat", {
     body: { messages: messages.slice(-12), context },
     headers: {
