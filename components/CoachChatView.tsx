@@ -85,7 +85,7 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between">
           <div>
             
-            <div className="text-lg font-extrabold text-white leading-tight">AI Coach</div>
+            <div className="text-lg font-extrabold text-white leading-tight">Bryce, your AI Coach</div>
           </div>
           <button
             type="button"
