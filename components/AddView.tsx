@@ -53,4 +53,8 @@ export const AddView: React.FC<AddViewProps> = ({ onNavigate }) => {
       </div>
 
       <div className="grid grid-cols-2 gap-4 w-full mt-4">
-       
+     
+      </div>
+    </div>
+  );
+};
