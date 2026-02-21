@@ -246,18 +246,14 @@ export const DiaryView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-       <div className="text-center">
-  <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
-    Your diary
+     <div className="relative flex items-center justify-center">
+  <div className="text-center">
+    <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
+      Your diary
+    </div>
+    <h1 className="mt-1 text-2xl font-extrabold text-white">Diary</h1>
   </div>
-  <h1 className="mt-1 text-2xl font-extrabold text-white">
-    Diary
-  </h1>
 </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2 rounded-3xl bg-surface p-8 border border-white/5 flex flex-col items-center justify-center text-center">
