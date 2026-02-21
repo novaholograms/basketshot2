@@ -206,37 +206,57 @@ export const DiaryView: React.FC = () => {
     await load();
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Your diary</div>
-          <h1 className="text-2xl font-extrabold text-white">Diary</h1>
+ return (
+  <div className="space-y-6">
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
+          Your diary
         </div>
-        <button
-          type="button"
-          onClick={openCreateWizard}
-          className="rounded-2xl bg-primary px-4 py-3 text-sm font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-95 transition-transform"
-        >
-          Log a game
-        </button>
+        <h1 className="text-2xl font-extrabold text-white">Diary</h1>
       </div>
+    </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2 rounded-3xl bg-surface p-8 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Avg points</div>
-          <div className="mt-3 text-7xl font-extrabold text-white leading-none">{stats.avgPoints}</div>
+    {/* Stats */}
+    <div className="grid grid-cols-2 gap-4">
+      <div className="col-span-2 rounded-3xl bg-surface p-8 border border-white/5 flex flex-col items-center justify-center text-center">
+        <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
+          AVG POINTS
         </div>
-        <div className="rounded-3xl bg-surface p-6 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Rebounds</div>
-          <div className="mt-3 text-4xl font-extrabold text-white leading-none">{stats.avgReb}</div>
-        </div>
-        <div className="rounded-3xl bg-surface p-6 border border-white/5">
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Assists</div>
-          <div className="mt-3 text-4xl font-extrabold text-white leading-none">{stats.avgAst}</div>
+        <div className="mt-3 text-7xl font-extrabold text-white leading-none">
+          {stats.avgPoints}
         </div>
       </div>
 
+      <div className="rounded-3xl bg-surface p-6 border border-white/5 flex flex-col items-center justify-center text-center">
+        <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
+          REBOUNDS
+        </div>
+        <div className="mt-3 text-4xl font-extrabold text-white leading-none">
+          {stats.avgReb}
+        </div>
+      </div>
+
+      <div className="rounded-3xl bg-surface p-6 border border-white/5 flex flex-col items-center justify-center text-center">
+        <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
+          ASSISTS
+        </div>
+        <div className="mt-3 text-4xl font-extrabold text-white leading-none">
+          {stats.avgAst}
+        </div>
+      </div>
+    </div>
+
+    {/* Full-width button under stats */}
+    <button
+      type="button"
+      onClick={openCreateWizard}
+      className="w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform"
+    >
+      Log a game
+    </button>
+  </div>
+);
       <div className="rounded-3xl bg-surface border border-white/5 p-5">
         <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Coach tip</div>
         <div className="mt-3 h-14 rounded-2xl bg-white/5 flex items-center px-4">
