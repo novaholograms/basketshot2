@@ -275,9 +275,7 @@ export const DiaryView: React.FC = () => {
   onClick={openCreateWizard}
   className="relative w-full rounded-3xl bg-primary px-6 py-5 text-base font-extrabold text-black shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:scale-[0.99] transition-transform overflow-visible"
 >
-  {/* Ola alrededor */}
-  <span className="pointer-events-none absolute -inset-2 rounded-[28px] ring-wave" />
-
+ 
   Log a game
 
   
