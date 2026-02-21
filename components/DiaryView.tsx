@@ -258,7 +258,6 @@ return (
       Log a game
     </button>
   </div>
-);
 
 
 
