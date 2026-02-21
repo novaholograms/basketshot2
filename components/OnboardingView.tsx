@@ -152,7 +152,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onNavigate }) =>
             <User size={32} />
           </div>
           <h2 className="text-3xl font-extrabold mb-2">What&apos;s your alias?</h2>
-          <p className="text-muted text-sm">This will personalize your experience. (Optional)</p>
+          <p className="text-muted text-sm">This will personalize your experience (Optional)</p>
         </div>
 
         <div className="space-y-4 px-4">
