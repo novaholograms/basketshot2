@@ -248,7 +248,7 @@ export const DiaryView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Your diary</div>
+          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted items-center">Your diary</div>
           <h1 className="text-2xl font-extrabold text-white">Diary</h1>
         </div>
       </div>
