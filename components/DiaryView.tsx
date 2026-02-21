@@ -279,7 +279,7 @@ export const DiaryView: React.FC = () => {
 </button>
 
      <div className="rounded-3xl bg-surface border border-purple-400 p-5">
-  <div className="text-xs font-extrabold tracking-[0.2em] text-white text-muted">
+  <div className="text-xs font-extrabold tracking-[0.2em] text-white ">
     Coach's Advice
   </div>
 
