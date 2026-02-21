@@ -4,6 +4,36 @@ import { useAuth } from "../contexts/AuthContext";
 import { generateWorkoutWithAI } from "../services/geminiExplainer";
 import { getSavedWorkoutIds, saveWorkout, unsaveWorkout } from "../services/savedWorkoutsService";
 
+function todayKey() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function readTodayMinutes(): number {
+  try {
+    const raw = localStorage.getItem("bs_today_minutes_v1");
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as { date: string; minutes: number };
+    if (parsed.date !== todayKey()) return 0;
+    return typeof parsed.minutes === "number" ? parsed.minutes : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function addTodayMinutes(delta: number) {
+  if (!delta || delta <= 0) return;
+  const current = readTodayMinutes();
+  const next = current + delta;
+  localStorage.setItem(
+    "bs_today_minutes_v1",
+    JSON.stringify({ date: todayKey(), minutes: next })
+  );
+}
+
 export const PRESET_WORKOUTS = [
   {
     title: "3-Point Shooting",
@@ -501,7 +531,14 @@ export const DrillsView: React.FC<DrillsViewProps> = ({ onWorkoutComplete, initi
 
     setCompletedSteps((prev) => {
       const next = new Set(prev);
+      const wasAlreadyCompleted = next.has(index);
       next.add(index);
+
+      if (!wasAlreadyCompleted) {
+        const mins = activeWorkout.steps[index]?.duration ?? 0;
+        addTodayMinutes(mins);
+      }
+
       return next;
     });
 

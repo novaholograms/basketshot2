@@ -19,6 +19,26 @@ import { TrendingCarousel } from './components/TrendingCarousel';
 import { Session, ViewType } from './types';
 import { ChevronDown } from 'lucide-react';
 
+function todayKey() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function readTodayMinutes(): number {
+  try {
+    const raw = localStorage.getItem("bs_today_minutes_v1");
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as { date: string; minutes: number };
+    if (parsed.date !== todayKey()) return 0;
+    return typeof parsed.minutes === "number" ? parsed.minutes : 0;
+  } catch {
+    return 0;
+  }
+}
+
 // Mock Data Initial State
 const INITIAL_SESSIONS: Session[] = [
   {
@@ -86,6 +106,16 @@ const App: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
+  const [todayMinutesSnapshot, setTodayMinutesSnapshot] = useState(() => readTodayMinutes());
+
+  const handleNavigate = (view: ViewType) => {
+    if (view === 'home') {
+      setTodayMinutesSnapshot(readTodayMinutes());
+    }
+    setCurrentView(view);
+  };
+
+  const navigateToHome = () => handleNavigate('home');
 
   // Calculate Stats based on Sessions and Time Range
   const stats = useMemo(() => {
@@ -116,9 +146,12 @@ const App: React.FC = () => {
     return {
       accuracy: Math.min(100, Math.max(0, baseAvgAccuracy + accuracyModifier)),
       sessionsCompleted: timeRange === 'today' ? 3 : baseSessions * multiplier,
-      totalTime: Math.round(baseTotalTime * multiplier)
+      totalTime:
+        timeRange === 'today'
+          ? todayMinutesSnapshot
+          : Math.round(baseTotalTime * multiplier)
     };
-  }, [sessions, timeRange]);
+  }, [sessions, timeRange, todayMinutesSnapshot]);
 
   // DEBUG: Log app guard state
   console.log("[APP] state", {
@@ -172,7 +205,7 @@ const App: React.FC = () => {
     };
 
     setSessions(prev => [newSession, ...prev]);
-    setCurrentView('home');
+    navigateToHome();
   };
 
   const handleTrendingSelect = (workout: any) => {
@@ -196,7 +229,7 @@ const App: React.FC = () => {
         return (
           <OnboardingShotAnalysisView
             onBack={() => setCurrentView('onboarding')}
-            onDone={() => setCurrentView('home')}
+            onDone={navigateToHome}
           />
         );
       case 'add':
@@ -289,7 +322,7 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {!isFullScreen && <BottomNav currentView={currentView} onNavigate={setCurrentView} />}
+      {!isFullScreen && <BottomNav currentView={currentView} onNavigate={handleNavigate} />}
       
     </div>
   );
