@@ -278,14 +278,17 @@ export const DiaryView: React.FC = () => {
   Log a game
 </button>
 
-      <div className="rounded-3xl bg-surface border border-yellow p-5">
-        <div className="text-xs font-extrabold  tracking-[0.2em] text-muted">Coach's Advice</div>
-        {coachTipLoading ? (
-          <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
-        ) : (
-          <div className="mt-3 rounded-2xl bg-white/5 border border-white/10 p-4 text-white/80 font-semibold text-sm leading-relaxed">
-            {coachTip ?? "Log a game to see advice"}
-          </div>
+     <div className="rounded-3xl bg-surface border border-yellow-400/60 p-5">
+  <div className="text-xs font-extrabold tracking-[0.2em] text-muted">
+    Coach's Advice
+  </div>
+
+  {coachTipLoading ? (
+    <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
+  ) : (
+    <div className="mt-3 rounded-2xl bg-white/5 border border-white/10 p-4 text-white/80 font-semibold text-sm leading-relaxed">
+      {coachTip ?? "Log a game to see advice"}
+    </div>
         )}
       </div>
 
