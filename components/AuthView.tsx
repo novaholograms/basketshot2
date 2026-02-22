@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { Capacitor } from "@capacitor/core";
 
 export function AuthView() {
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, signInWithApple, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [appleBusy, setAppleBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const showApple = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +73,26 @@ export function AuthView() {
         >
           {busy ? "Procesando..." : mode === "login" ? "Entrar" : "Crear cuenta"}
         </button>
+
+        {showApple && (
+          <button
+            type="button"
+            disabled={busy || loading || appleBusy}
+            onClick={async () => {
+              setError(null);
+              setAppleBusy(true);
+              const res = await signInWithApple();
+              setAppleBusy(false);
+              if (res.ok === false) setError(res.error);
+            }}
+            className="w-full rounded-2xl bg-black py-3 font-extrabold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+            </svg>
+            {appleBusy ? "Conectando..." : "Continuar con Apple"}
+          </button>
+        )}
 
         <button
           type="button"

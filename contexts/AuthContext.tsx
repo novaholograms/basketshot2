@@ -3,6 +3,8 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
 import { clearAnalysesCache } from "../utils/analysisCache";
 import { clearDiaryCache } from "../utils/diaryCache";
+import { Capacitor } from "@capacitor/core";
+import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 
 export type ProfileRow = {
   id: string;
@@ -28,6 +30,7 @@ type AuthContextValue = {
 
   signUp: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   signIn: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  signInWithApple: () => Promise<{ ok: true } | { ok: false; error: string }>;
   signOut: () => Promise<void>;
 
   refreshProfile: () => Promise<void>;
@@ -52,6 +55,26 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const base64UrlEncode = (bytes: Uint8Array) => {
+  let str = "";
+  bytes.forEach((b) => (str += String.fromCharCode(b)));
+  const b64 = btoa(str);
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+};
+
+const generateNonce = (length = 32) => {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes);
+};
+
+const sha256Hex = async (input: string) => {
+  const enc = new TextEncoder().encode(input);
+  const hashBuf = await crypto.subtle.digest("SHA-256", enc);
+  const hashArr = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map((b) => b.toString(16).padStart(2, "0")).join("");
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -146,6 +169,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { ok: true as const };
   };
 
+  const signInWithApple = async () => {
+    if (Capacitor.getPlatform() !== "ios") {
+      return { ok: false as const, error: "Apple Sign-In solo disponible en iOS" };
+    }
+
+    try {
+      const nonceRaw = generateNonce(32);
+      const nonceHash = await sha256Hex(nonceRaw);
+
+      const result = await SignInWithApple.authorize({
+        scopes: ["email", "name"],
+        state: generateNonce(16),
+        nonce: nonceHash,
+      } as any);
+
+      const token =
+        (result as any)?.response?.identityToken ||
+        (result as any)?.identityToken ||
+        (result as any)?.response?.id_token;
+
+      if (!token) {
+        return { ok: false as const, error: "No se obtuvo identityToken de Apple" };
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token,
+        nonce: nonceRaw,
+      });
+
+      if (error) {
+        return { ok: false as const, error: error.message ?? "Error Supabase Apple" };
+      }
+
+      const givenName =
+        (result as any)?.response?.givenName ||
+        (result as any)?.response?.fullName?.givenName;
+
+      const familyName =
+        (result as any)?.response?.familyName ||
+        (result as any)?.response?.fullName?.familyName;
+
+      const fullName = [givenName, familyName].filter(Boolean).join(" ").trim();
+      if (fullName) {
+        await supabase.auth.updateUser({ data: { full_name: fullName } });
+      }
+
+      return { ok: true as const };
+    } catch (e: any) {
+      if (e?.code === "1001" || e?.code === 1001 || String(e?.message || "").includes("1001")) {
+        return { ok: false as const, error: "Inicio de sesión cancelado" };
+      }
+      return { ok: false as const, error: e?.message || "Error al iniciar sesión con Apple" };
+    }
+  };
+
   const signOut = async () => {
     if (user?.id) {
       clearAnalysesCache(user.id);
@@ -190,6 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       signUp,
       signIn,
+      signInWithApple,
       signOut,
       refreshProfile,
       updateProfile,
