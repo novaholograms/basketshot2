@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
 import {
   Activity,
   AlertCircle,
@@ -140,24 +141,37 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
   };
 
   const handleSourceSelect = async (source: 'camera' | 'gallery') => {
-    if (isNative) {
-      try {
-        const image = await Camera.getPhoto({
-          quality: 90,
-          allowEditing: false,
-          resultType: CameraResultType.Uri,
-          source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
-        });
+    // Web: mantener input HTML (ya acepta video/*)
+    if (!Capacitor.isNativePlatform()) {
+      fileInputRef.current?.click();
+      return;
+    }
 
-        if (image.webPath) {
-          setVideoUrl(image.webPath);
+    try {
+      if (source === 'gallery') {
+        // Nativo: seleccionar VIDEO (no fotos)
+        const result = await FilePicker.pickVideos({ limit: 1 });
+
+        const file = result.files?.[0];
+        const path = file?.path;
+
+        if (path) {
+          // Convertir file:// a URL accesible por WebView
+          const safeUrl = Capacitor.convertFileSrc(path);
+          setVideoUrl(safeUrl);
           setStep('preview');
         }
-      } catch (error) {
-        console.error('Camera error:', error);
+
+        return;
       }
-    } else {
+
+      // source === 'camera'
+      // Mantener comportamiento actual: fallback a input HTML con capture
+      // (Camera.getPhoto no graba video, solo toma fotos)
       fileInputRef.current?.click();
+    } catch (error) {
+      // Si el usuario cancela, no es un error grave
+      console.error('Video picker error:', error);
     }
   };
 

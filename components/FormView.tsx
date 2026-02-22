@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
 import type { AnalysisResult, ShotAnalysisRow } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
@@ -70,11 +72,41 @@ export const FormView: React.FC = () => {
     setViewState('upload');
   };
 
-  const handleSourceSelect = (source: 'camera' | 'gallery') => {
-    if (source === 'camera') {
+  const handleSourceSelect = async (source: 'camera' | 'gallery') => {
+    // Web: mantener input HTML (ya acepta video/*)
+    if (!Capacitor.isNativePlatform()) {
+      if (source === 'camera') {
+        cameraInputRef.current?.click();
+      } else {
+        galleryInputRef.current?.click();
+      }
+      return;
+    }
+
+    try {
+      if (source === 'gallery') {
+        // Nativo: seleccionar VIDEO (no fotos)
+        const result = await FilePicker.pickVideos({ limit: 1 });
+
+        const file = result.files?.[0];
+        const path = file?.path;
+
+        if (path) {
+          // Convertir file:// a URL accesible por WebView
+          const safeUrl = Capacitor.convertFileSrc(path);
+          setVideoUrl(safeUrl);
+          setViewState('preview');
+        }
+
+        return;
+      }
+
+      // source === 'camera'
+      // Mantener comportamiento actual: fallback a input HTML con capture
       cameraInputRef.current?.click();
-    } else {
-      galleryInputRef.current?.click();
+    } catch (error) {
+      // Si el usuario cancela, no es un error grave
+      console.error('Video picker error:', error);
     }
   };
 

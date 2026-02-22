@@ -1,0 +1,15 @@
+{
+	"appId": "com.basketshotai.app",
+	"appName": "BasketShot AI",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"packageClassList": [
+		"SignInWithApple",
+		"CAPCameraPlugin",
+		"FilePickerPlugin",
+		"PurchasesPlugin",
+		"RevenueCatUIPlugin"
+	]
+}
