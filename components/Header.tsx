@@ -35,10 +35,13 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
       <button
         type="button"
         onClick={onOpenCoachChat}
-        className="h-11 w-11 rounded-2xl bg-white/5 border border-white/10 text-white/80 active:scale-[0.97] transition-transform flex items-center justify-center"
+        className="h-11 w-11 rounded-2xl bg-white/5 border border-white/10 text-white/80 active:scale-[0.97] transition-transform flex flex-col items-center justify-center gap-0.5"
         aria-label="Open AI Coach"
       >
         <MessageCircle className="h-5 w-5" />
+        <div className="text-[9px] font-extrabold tracking-wider text-white/70 leading-none">
+          AI Coach
+        </div>
       </button>
     </header>
   );

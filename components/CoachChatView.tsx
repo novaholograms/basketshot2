@@ -11,6 +11,9 @@ const SUGGESTIONS = [
   "How do I fix my shooting form step by step?",
 ];
 
+const COACH_AVATAR =
+  "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=200&q=80";
+
 function chatKey(userId: string) {
   return `coach_chat_${userId}`;
 }
@@ -83,9 +86,20 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[110] bg-background flex flex-col">
       <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-white/5">
         <div className="flex items-center justify-between">
-          <div>
-            
-            <div className="text-lg font-extrabold text-white leading-tight">Bryce, your AI Coach</div>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative w-12 h-12 rounded-full border-2 border-primary p-0.5 flex-shrink-0">
+              <img
+                src={COACH_AVATAR}
+                alt="AI Coach"
+                className="w-full h-full rounded-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="text-lg font-extrabold text-white leading-tight truncate">
+                Bryce, your AI Coach
+              </div>
+            </div>
           </div>
           <button
             type="button"
@@ -96,28 +110,12 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        {messages.length === 0 && (
-          <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => handleSend(s)}
-                disabled={loading}
-                className="shrink-0 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs font-extrabold text-white/80 active:scale-95 transition-transform"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto no-scrollbar px-6 py-5 space-y-3">
         {messages.length === 0 && (
           <div className="rounded-3xl bg-surface border border-white/5 p-5 text-white/60 text-sm font-semibold leading-relaxed">
-            Ask me anything about your training, games, or shooting form. Use the suggestions above to get started.
+            Ask me anything about your training, games, or shooting form. Use the suggestions below to get started.
           </div>
         )}
 
@@ -148,6 +146,27 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
+
+      {messages.length === 0 && (
+        <div className="flex-shrink-0 px-6 pt-4">
+          <div className="flex flex-col gap-2">
+            {SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleSend(s)}
+                disabled={loading}
+                className={[
+                  "w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10",
+                  "text-xs font-extrabold text-white/80 active:scale-[0.99] transition-transform",
+                ].join(" ")}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-shrink-0 px-6 pb-8 pt-4 border-t border-white/5 bg-background">
         <div className="flex items-center gap-3">
