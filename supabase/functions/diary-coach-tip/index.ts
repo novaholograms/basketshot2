@@ -91,25 +91,59 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ tip: null }, 200);
     }
 
-    const { counts, topBest, topWorst } = summarize(safeEntries);
+    // Build rich context (latest entry + recent matches)
+    const today = safeEntries[0];
+    const recent = safeEntries.slice(0, 5);
+
+    const todayNotes = (today?.notes ?? "").trim();
+    const todayTitle = (today?.title ?? "").trim();
+    const todayResult = today?.result ?? null;
+    const todayScore = today?.score_manual ?? null;
+
+    function fmtEntry(e: DiaryEntryRow) {
+      const line1 = `- ${e.entry_date} | result: ${e.result ?? "n/a"} | score: ${e.score_manual ?? "n/a"} | P/R/A: ${e.points ?? "n/a"}/${e.rebounds ?? "n/a"}/${e.assists ?? "n/a"}`;
+      const best = Array.isArray(e.best_aspects) ? e.best_aspects.filter(Boolean).slice(0, 3) : [];
+      const worst = Array.isArray(e.worst_aspects) ? e.worst_aspects.filter(Boolean).slice(0, 3) : [];
+      const line2 = `  strengths: ${best.join(", ") || "n/a"} | weaknesses: ${worst.join(", ") || "n/a"}`;
+      const notes = (e.notes ?? "").trim();
+      const line3 = notes ? `  how they felt: "${notes.slice(0, 400)}"` : `  how they felt: n/a`;
+      return [line1, line2, line3].join("\n");
+    }
+
+    const recentBlock = recent.map(fmtEntry).join("\n\n");
+
+    // High-level counts
+    const { counts } = summarize(safeEntries);
 
     const prompt = [
-      "You are a concise basketball coach.",
-      "Based on the user's match diary, give ONE actionable tip for today's training.",
-      "Max 2 sentences. No emojis. No fluff. Return only the tip text, no JSON, no labels.",
+      "You are a personal basketball coach.",
+      "Write today's coaching advice in ENGLISH.",
+      "Output: 1–2 short paragraphs. No emojis. No labels. No bullets unless absolutely necessary.",
+      "Be specific and actionable: give 1–2 concrete things the player should do in their next training session.",
+      "Use the diary context heavily, especially 'how they felt' (notes).",
+      "If there is no meaningful diary info, return an encouraging but practical suggestion to log games.",
       "",
-      "Context:",
+      "Today's entry (most recent):",
+      `date: ${today?.entry_date ?? "n/a"}`,
+      `title: ${todayTitle || "n/a"}`,
+      `result: ${todayResult ?? "n/a"}`,
+      `score: ${todayScore ?? "n/a"}`,
+      `points/rebounds/assists: ${today?.points ?? "n/a"}/${today?.rebounds ?? "n/a"}/${today?.assists ?? "n/a"}`,
+      `how they felt: "${todayNotes ? todayNotes.slice(0, 700) : "n/a"}"`,
+      "",
+      "Recent matches (latest first):",
+      recentBlock || "n/a",
+      "",
+      "High-level summary:",
       `Wins: ${counts.win}, Draw/Not finished: ${counts.draw + counts.not_finished}, Losses: ${counts.loss}`,
-      `Most frequent strengths: ${topBest.join(", ") || "n/a"}`,
-      `Most frequent weaknesses: ${topWorst.join(", ") || "n/a"}`,
     ].join("\n");
 
     const genAI = new GoogleGenerativeAI(geminiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
       generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 120,
+        temperature: 0.6,
+        maxOutputTokens: 240,
       },
     });
 
