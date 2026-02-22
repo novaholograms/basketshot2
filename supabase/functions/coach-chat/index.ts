@@ -83,10 +83,10 @@ Deno.serve(async (req: Request) => {
 
     const genAI = new GoogleGenerativeAI(geminiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: systemPrompt,
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.5,
         maxOutputTokens: 400,
       },
     });
