@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Target, ArrowUpCircle, Activity, CircleDashed, Camera, Image as ImageIcon, ChevronLeft, Info, X, Play, CheckCircle2, Smartphone, Loader2, Sparkles, AlertCircle, Dumbbell, ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
 import type { AnalysisResult, ShotAnalysisRow } from '../types';
 import { analyzeVideo } from '../services/shotAnalyzer';
@@ -86,6 +85,7 @@ export const FormView: React.FC = () => {
     try {
       if (source === 'gallery') {
         // Nativo: seleccionar VIDEO (no fotos)
+        const { FilePicker } = await import('@capawesome/capacitor-file-picker');
         const result = await FilePicker.pickVideos({ limit: 1 });
 
         const file = result.files?.[0];

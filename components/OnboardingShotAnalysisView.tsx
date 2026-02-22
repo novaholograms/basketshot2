@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { FilePicker } from '@capawesome/capacitor-file-picker';
 import {
   Activity,
   AlertCircle,
@@ -150,6 +149,7 @@ export default function OnboardingShotAnalysisView({ onBack, onDone }: Props) {
     try {
       if (source === 'gallery') {
         // Nativo: seleccionar VIDEO (no fotos)
+        const { FilePicker } = await import('@capawesome/capacitor-file-picker');
         const result = await FilePicker.pickVideos({ limit: 1 });
 
         const file = result.files?.[0];
