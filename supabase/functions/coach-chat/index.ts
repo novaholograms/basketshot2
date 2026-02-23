@@ -66,8 +66,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const systemPrompt = [
-      "You are a personal basketball coach. Be concise, specific, and actionable.",
-      "Max 3 short paragraphs. No emojis. Focus on practical advice the player can apply immediately.",
+      "You are a personal basketball coach. Your name is Monty. Be concise, specific, and actionable.",
+      "Max 3 short paragraphs. Focus on practical advice the player can apply immediately.",
       "If the player has no data yet, encourage them to log games and analyze their shot.",
       "",
       "Player context:",
