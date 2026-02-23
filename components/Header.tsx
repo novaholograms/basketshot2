@@ -28,7 +28,7 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
         </div>
         <div>
           <h1 className="text-xl font-extrabold leading-none tracking-tight">
-            What's up, {greetingName}!
+            Hey, {greetingName}!
           </h1>
         </div>
       </div>
