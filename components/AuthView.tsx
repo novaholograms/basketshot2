@@ -38,7 +38,7 @@ export function AuthView() {
     return (
       <div className="min-h-screen bg-black text-white max-w-md mx-auto px-6 py-8 flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[600px] h-[600px] bg-primary/20 rounded-full blur-[220px]" />
+          <div className="w-[600px] h-[600px] bg-primary/20 rounded-full blur-[180px]" />
         </div>
 
         <div className="relative z-10 flex flex-col items-center w-full">
