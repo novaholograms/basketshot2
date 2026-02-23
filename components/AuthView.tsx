@@ -44,20 +44,16 @@ export function AuthView() {
         <div className="relative z-10 flex flex-col items-center w-full">
           <div className="w-48 h-48 mb-8 relative flex items-center justify-center">
             <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
-            <div className="relative w-40 h-40 rounded-full border-2 border-primary/40 flex items-center justify-center">
-              <svg className="w-24 h-24" viewBox="0 0 100 100" fill="none">
-                <circle cx="50" cy="50" r="45" fill="#FF8A00" opacity="0.9"/>
-                <path d="M30 35 L50 15 L70 35" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-                <path d="M30 65 L50 85 L70 65" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-                <path d="M35 50 L15 50" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-                <path d="M65 50 L85 50" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-                <line x1="50" y1="20" x2="50" y2="80" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-              </svg>
-            </div>
+            <img
+              src="/logobasketshot.png"
+              alt="BasketShot AI"
+              className="relative w-40 h-40"
+              draggable={false}
+            />
           </div>
 
           <h1 className="text-5xl font-black text-center mb-2 tracking-tight">
-            BasketShot <span className="text-primary">AI</span>
+            BasketShot<span className="text-primary">AI</span>
           </h1>
 
           <p className="text-center text-gray-400 text-base max-w-xs mb-16 px-4 leading-relaxed">
@@ -89,18 +85,12 @@ export function AuthView() {
   if (stage === "auth") {
     return (
       <div className="min-h-screen bg-black text-white max-w-md mx-auto px-6 py-12 flex flex-col items-center">
-        <div className="w-20 h-20 mb-8 relative flex items-center justify-center">
-          <div className="w-16 h-16 rounded-full border border-primary/40 flex items-center justify-center">
-            <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none">
-              <circle cx="50" cy="50" r="45" fill="#FF8A00" opacity="0.9"/>
-              <path d="M30 35 L50 15 L70 35" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-              <path d="M30 65 L50 85 L70 65" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-              <path d="M35 50 L15 50" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-              <path d="M65 50 L85 50" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-              <line x1="50" y1="20" x2="50" y2="80" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-            </svg>
-          </div>
-        </div>
+        <img
+          src="/logobasketshot.png"
+          alt="BasketShot AI"
+          className="w-20 h-20 mb-8"
+          draggable={false}
+        />
 
         <h2 className="text-4xl font-black mb-16 text-center">Join the <span className="text-primary">ELITE</span></h2>
 
