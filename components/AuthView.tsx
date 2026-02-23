@@ -53,7 +53,7 @@ export function AuthView() {
           </div>
 
           <h1 className="text-5xl font-black text-center mb-2 tracking-tight">
-            BasketShot<span className="text-primary">AI</span>
+            BasketShot<span className="text-primary"> AI</span>
           </h1>
 
           <p className="text-center text-gray-400 text-base max-w-xs mb-16 px-4 leading-relaxed">
