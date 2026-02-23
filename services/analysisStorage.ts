@@ -52,3 +52,31 @@ export async function fetchShotAnalysesByShotType(
   if (error) throw error;
   return (data ?? []) as ShotAnalysisRow[];
 }
+
+export async function fetchShotAnalysesAll(
+  userId: string,
+  limit = 50
+): Promise<ShotAnalysisRow[]> {
+  const { data, error } = await supabase
+    .from("shot_analyses")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as ShotAnalysisRow[];
+}
+
+export async function fetchShotAnalysisById(
+  userId: string,
+  id: string
+): Promise<ShotAnalysisRow> {
+  const { data, error } = await supabase
+    .from("shot_analyses")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data as ShotAnalysisRow;
+}

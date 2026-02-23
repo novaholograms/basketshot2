@@ -19,6 +19,7 @@ import { TrendingCarousel } from './components/TrendingCarousel';
 import CoachChatView from './components/CoachChatView';
 import ShotAnalysisCard from './components/ShotAnalysisCard';
 import ShotAnalysesListView from './components/ShotAnalysesListView';
+import ShotAnalysisResultView from './components/ShotAnalysisResultView';
 import { fetchShotAnalysesByShotType } from './services/analysisStorage';
 import { Session, ViewType } from './types';
 import { ChevronDown } from 'lucide-react';
@@ -113,6 +114,7 @@ const App: React.FC = () => {
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
   const [todayMinutes, setTodayMinutes] = useState(() => readTodayMinutes());
   const [selectedShotType, setSelectedShotType] = useState<"3pt" | "ft" | null>(null);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [home3ptScores, setHome3ptScores] = useState<number[]>([]);
   const [homeFtScores, setHomeFtScores] = useState<number[]>([]);
   const [home3ptLast, setHome3ptLast] = useState<number | null>(null);
@@ -277,8 +279,8 @@ const App: React.FC = () => {
   };
 
   const handleTrendingSelect = (workout: any) => {
-    setSelectedWorkout(workout);
-    setCurrentView('workout');
+    setSelectedShotType(null);
+    setCurrentView("shot-analyses-list");
   };
 
   const getTitle = () => {
@@ -330,11 +332,20 @@ const App: React.FC = () => {
         return (
           <ShotAnalysesListView
             userId={userId}
-            shotType={(selectedShotType ?? "3pt") as "3pt" | "ft"}
+            shotType={(selectedShotType ?? "all") as "3pt" | "ft" | "all"}
             onBack={() => setCurrentView('home')}
             onOpenAnalysis={(row) => {
-              console.log("[ShotAnalysesList] open analysis", row.id);
+              setSelectedAnalysisId(row.id);
+              setCurrentView("shot-analysis-result");
             }}
+          />
+        );
+      case "shot-analysis-result":
+        return (
+          <ShotAnalysisResultView
+            userId={userId ?? ""}
+            analysisId={selectedAnalysisId ?? ""}
+            onBack={() => setCurrentView("shot-analyses-list")}
           />
         );
       case 'home':

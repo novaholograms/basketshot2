@@ -8,7 +8,8 @@ export type ViewType =
   | 'diary'
   | 'onboarding'
   | 'onboarding-shot-analysis'
-  | 'shot-analyses-list';
+  | 'shot-analyses-list'
+  | 'shot-analysis-result';
 
 export interface Session {
   id: string;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import {
   fetchRecentDiaryEntries,
@@ -119,6 +119,10 @@ export const DiaryView: React.FC = () => {
   const [coachTip, setCoachTip] = useState<string>("");
   const [coachTipLoading, setCoachTipLoading] = useState(false);
 
+  const coachTipRef = useRef<HTMLDivElement | null>(null);
+  const [coachExpanded, setCoachExpanded] = useState(false);
+  const [coachOverflowing, setCoachOverflowing] = useState(false);
+
   const filteredEntries = useMemo(() => {
     let list = [...entries];
 
@@ -139,9 +143,9 @@ export const DiaryView: React.FC = () => {
   }, [entries, rangeFilter, selectedDate]);
 
   const stats = useMemo(() => ({
-    avgPoints: Math.round(mean(entries.map((e) => e.points))),
-    avgReb: Math.round(mean(entries.map((e) => e.rebounds))),
-    avgAst: Math.round(mean(entries.map((e) => e.assists))),
+    avgPoints: (mean(entries.map((e) => e.points)) || 0).toFixed(1),
+    avgReb: (mean(entries.map((e) => e.rebounds)) || 0).toFixed(1),
+    avgAst: (mean(entries.map((e) => e.assists)) || 0).toFixed(1),
   }), [entries]);
 
   const entriesByDate = useMemo(() => {
@@ -211,6 +215,18 @@ export const DiaryView: React.FC = () => {
       cancelled = true;
     };
   }, [userId, entries]);
+
+  useEffect(() => {
+    const el = coachTipRef.current;
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      const cs = window.getComputedStyle(el);
+      const lineHeight = parseFloat(cs.lineHeight || "20") || 20;
+      const max = lineHeight * 5;
+      setCoachOverflowing(el.scrollHeight > max + 2);
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [coachTip, coachTipLoading]);
 
   function openCreateWizard() {
     setWizardMode("create");
@@ -286,8 +302,28 @@ export const DiaryView: React.FC = () => {
   {coachTipLoading ? (
     <div className="mt-3 h-14 rounded-2xl bg-white/5 animate-pulse" />
   ) : (
-    <div className="mt-3 rounded-2xl bg-white/5 border border-white/10 p-4 text-white/80 font-semibold text-sm leading-relaxed">
-      {coachTip || "Log a game to see advice"}
+    <div className="mt-3 rounded-2xl bg-white/5 border border-white/10 p-4">
+      <div
+        ref={coachTipRef}
+        className="text-white/80 font-semibold text-sm leading-relaxed overflow-hidden transition-[max-height] duration-200"
+        style={
+          coachExpanded
+            ? { maxHeight: 1000 }
+            : { maxHeight: "7.5em" }
+        }
+      >
+        {coachTip || "Log a game to see advice"}
+      </div>
+
+      {coachOverflowing && (
+        <button
+          type="button"
+          onClick={() => setCoachExpanded((v) => !v)}
+          className="mt-3 text-xs font-extrabold tracking-[0.2em] text-white/70 hover:text-white transition-colors"
+        >
+          {coachExpanded ? "SEE LESS" : "SEE MORE"}
+        </button>
+      )}
     </div>
   )}
       </div>

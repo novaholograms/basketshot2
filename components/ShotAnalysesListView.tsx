@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { ShotAnalysisRow } from "../types";
-import { fetchShotAnalysesByShotType } from "../services/analysisStorage";
+import { fetchShotAnalysesAll, fetchShotAnalysesByShotType } from "../services/analysisStorage";
 
-type ShotType = "3pt" | "ft";
+type ShotType = "3pt" | "ft" | "all";
 
 type Props = {
   userId: string | null;
@@ -12,6 +12,7 @@ type Props = {
 };
 
 function formatShotTitle(shotType: ShotType) {
+  if (shotType === "all") return "All Analyses";
   return shotType === "3pt" ? "Jumpshot (3PT)" : "Free Throw";
 }
 
@@ -53,7 +54,10 @@ export default function ShotAnalysesListView({
       setErrorMsg(null);
 
       try {
-        const data = await fetchShotAnalysesByShotType(userId, shotType, 20);
+        const data =
+          shotType === "all"
+            ? await fetchShotAnalysesAll(userId, 50)
+            : await fetchShotAnalysesByShotType(userId, shotType, 20);
         if (!cancelled) setRows(data ?? []);
       } catch (e: any) {
         if (!cancelled) setErrorMsg(e?.message ?? "Failed to load analyses");
