@@ -60,11 +60,7 @@ export function AuthView() {
             Elevate your game with AI-powered coaching and real-time shot analysis.
           </p>
 
-          <div className="flex gap-2 mb-12">
-            <div className="w-8 h-1 rounded-full bg-primary" />
-            <div className="w-8 h-1 rounded-full bg-gray-700" />
-            <div className="w-8 h-1 rounded-full bg-gray-700" />
-          </div>
+         
 
           <button
             onClick={() => setStage("auth")}
