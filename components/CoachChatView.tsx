@@ -175,7 +175,7 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask your coach..."
+            placeholder="Ask Monty..."
             className="flex-1 rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-sm font-semibold text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
           />
           <button
