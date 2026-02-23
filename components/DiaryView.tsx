@@ -249,7 +249,7 @@ export const DiaryView: React.FC = () => {
      <div className="relative flex items-center justify-center">
   <div className="text-center">
     <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">
-      BECOME A BEAST.
+      TRAIN WITH A PURPOSE.
     </div>
     <h1 className="mt-1 text-2xl font-extrabold text-white">Your Basketball Diary</h1>
   </div>
