@@ -41,7 +41,7 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
 >
   <div className="relative">
     {/* Círculo naranja difuminado (más grande) */}
-    <span className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f98006]/60 blur-lg" />
+    <span className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f98006]/60 blur-lg" />
     {/* Texto encima */}
     <div className="relative text-[10px] font-extrabold tracking-wider text-white/85 leading-none">
       AI Coach
