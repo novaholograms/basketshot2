@@ -177,7 +177,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
             <p className="text-muted text-sm font-medium">Manage your account & stats</p>
          </div>
          <button className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors">
-            <Settings size={20} className="text-white" />
+          
          </button>
       </div>
 
