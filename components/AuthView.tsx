@@ -102,7 +102,7 @@ export function AuthView() {
           </div>
         </div>
 
-        <h2 className="text-4xl font-black mb-16 text-center">Join the <span className="text-primary">eLITE</span></h2>
+        <h2 className="text-4xl font-black mb-16 text-center">Join the <span className="text-primary">ELITE</span></h2>
 
         <div className="w-full space-y-4 mb-8">
           <button
