@@ -97,7 +97,7 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
             </div>
             <div className="min-w-0">
               <div className="text-lg font-extrabold text-white leading-tight truncate">
-                Bryce, your AI Coach
+                Monty, your AI Coach
               </div>
             </div>
           </div>
