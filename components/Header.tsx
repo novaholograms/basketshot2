@@ -18,12 +18,7 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
   return (
     <header className="flex items-center justify-between px-6 py-6 sticky top-0 bg-background/80 backdrop-blur-md z-40">
       <div className="flex items-center gap-4">
-        <img
-          src="/logobasketshot.png"
-          alt="BasketShot AI"
-          className="h-12 w-12"
-          draggable={false}
-        />
+       
         <div className="relative w-12 h-12 rounded-full border-2 border-primary p-0.5">
           <img
             src={profile?.avatar_url || FALLBACK_AVATAR}
