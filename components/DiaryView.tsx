@@ -319,7 +319,7 @@ export const DiaryView: React.FC = () => {
         <button
           type="button"
           onClick={() => setCoachExpanded((v) => !v)}
-          className="mt-3 text-xs font-extrabold tracking-[0.2em] text-white/70 hover:text-white transition-colors text-centered"
+          className="mt-3 text-xs font-extrabold tracking-[0.2em] text-white/70 hover:text-white transition-colors items-center"
         >
           {coachExpanded ? "SEE LESS" : "SEE MORE"}
         </button>
