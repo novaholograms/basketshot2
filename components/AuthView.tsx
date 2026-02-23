@@ -79,7 +79,7 @@ export function AuthView() {
           </button>
 
           <p className="text-xs text-gray-600 font-bold tracking-widest uppercase">
-            Trusted by 50,000+ athletes worldwide
+            Trusted by 5,000+ athletes worldwide
           </p>
         </div>
       </div>
