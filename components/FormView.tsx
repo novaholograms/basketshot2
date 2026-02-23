@@ -440,7 +440,7 @@ export const FormView: React.FC = () => {
             <div className="space-y-3">
                 {historyLoading && history.length === 0 ? (
                     <div className="text-center py-10 text-muted">
-                        <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+                        <Loader2 className="animate-spin mx-auto mb-2" size={4} />
                         <p className="text-sm font-medium">Loading history...</p>
                     </div>
                 ) : filteredHistory.length > 0 ? (
