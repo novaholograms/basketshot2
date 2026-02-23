@@ -115,7 +115,7 @@ export default function CoachChatView({ onClose }: { onClose: () => void }) {
       <div ref={listRef} className="flex-1 overflow-y-auto no-scrollbar px-6 py-5 space-y-3">
         {messages.length === 0 && (
           <div className="rounded-3xl bg-surface border border-white/5 p-5 text-white/60 text-sm font-semibold leading-relaxed">
-            Ask me anything about your training, games, or shooting form. Use the suggestions below to get started.
+            Hey, I am Monty. Ask me anything about your training, games, or shooting form. I can help you go one step farther than the rest. Just be different.
           </div>
         )}
 
