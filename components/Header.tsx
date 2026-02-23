@@ -38,17 +38,17 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
         </div>
       </div>
 
-   <button
+  <button
   type="button"
   onClick={onOpenCoachChat}
-  className="h-13 w-13 rounded-2xl bg-white/5 border border-white/10 text-white/80 active:scale-[0.97] transition-transform flex flex-col items-center justify-center gap-0.5"
+  className="h-13 w-13 rounded-2xl text-white/80 active:scale-[0.97] transition-transform flex flex-col items-center justify-center"
   aria-label="Open AI Coach"
 >
   <div className="relative">
-    {/* Círculo naranja difuminado */}
-    <span className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f98006]/60 blur-md" />
+    {/* Círculo naranja difuminado (más grande) */}
+    <span className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f98006]/60 blur-lg" />
     {/* Texto encima */}
-    <div className="relative text-[10px] font-extrabold tracking-wider text-white/80 leading-none">
+    <div className="relative text-[10px] font-extrabold tracking-wider text-white/85 leading-none">
       AI Coach
     </div>
   </div>
