@@ -41,7 +41,7 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
       <button
         type="button"
         onClick={onOpenCoachChat}
-        className="h-11 w-11 rounded-2xl bg-white/5 border border-white/10 text-white/80 active:scale-[0.97] transition-transform flex flex-col items-center justify-center gap-0.5"
+        className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 text-white/80 active:scale-[0.97] transition-transform flex flex-col items-center justify-center gap-0.5"
         aria-label="Open AI Coach"
       >
        
