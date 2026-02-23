@@ -410,7 +410,7 @@ export const FormView: React.FC = () => {
          <div className="px-1">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold">Analysis History</h3>
-                <Filter size={16} className="text-muted" />
+              
             </div>
 
             {/* Filter Chips */}
