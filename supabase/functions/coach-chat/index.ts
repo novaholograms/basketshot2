@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
       systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.5,
-        maxOutputTokens: 400,
+        maxOutputTokens: 800,
       },
     });
 
