@@ -45,7 +45,7 @@ export const Header: React.FC<{ onOpenCoachChat: () => void }> = ({ onOpenCoachC
         aria-label="Open AI Coach"
       >
        
-        <div className="text-[9px] font-extrabold tracking-wider text-white/70 leading-none">
+        <div className="text-[12px] font-extrabold tracking-wider text-white/70 leading-none">
           AI Coach
         </div>
       </button>
