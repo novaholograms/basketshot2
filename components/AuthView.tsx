@@ -38,12 +38,12 @@ export function AuthView() {
     return (
       <div className="min-h-screen bg-black text-white max-w-md mx-auto px-6 py-8 flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[600px] h-[600px] bg-primary/20 rounded-full blur-[300px]" />
+          <div className="w-[600px] h-[600px] bg-primary/20 rounded-full blur-[220px]" />
         </div>
 
         <div className="relative z-10 flex flex-col items-center w-full">
           <div className="w-48 h-48 mb-8 relative flex items-center justify-center">
-            <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
             <div className="relative w-40 h-40 rounded-full border-2 border-primary/40 flex items-center justify-center">
               <svg className="w-24 h-24" viewBox="0 0 100 100" fill="none">
                 <circle cx="50" cy="50" r="45" fill="#FF8A00" opacity="0.9"/>
