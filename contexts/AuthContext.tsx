@@ -31,6 +31,7 @@ type AuthContextValue = {
   signUp: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   signIn: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   signInWithApple: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  signInWithGoogle: () => Promise<{ ok: true } | { ok: false; error: string }>;
   signOut: () => Promise<void>;
 
   refreshProfile: () => Promise<void>;
@@ -225,6 +226,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const isNative = Capacitor.isNativePlatform();
+
+      if (!isNative) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        if (error) return { ok: false as const, error: error.message };
+        return { ok: true as const };
+      }
+
+      const { Browser } = await import("@capacitor/browser");
+
+      const redirectTo = "basketshotai://oauth-callback";
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) return { ok: false as const, error: error.message };
+      if (!data?.url) return { ok: false as const, error: "No OAuth URL received" };
+
+      await Browser.open({ url: data.url });
+      return { ok: true as const };
+    } catch (e: any) {
+      return { ok: false as const, error: e?.message || "Error signing in with Google" };
+    }
+  };
+
   const signOut = async () => {
     if (user?.id) {
       clearAnalysesCache(user.id);
@@ -270,6 +308,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signIn,
       signInWithApple,
+      signInWithGoogle,
       signOut,
       refreshProfile,
       updateProfile,
